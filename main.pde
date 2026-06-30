@@ -4,6 +4,7 @@ int oleadas_para_incrementar_lados = 3;
 int incremento_enemigos_oleada = 3;
 int oleada = 0;
 boolean oleada_terminada;
+Bala[] balas;
 int kills; // No hice esta logica aun
 int[] enemigos_por_lado = new int[4];
 int[] repartir_enemigos(int cantidad_enemigos, boolean[] lados){
@@ -57,7 +58,7 @@ void inicializar_enemigos(int[] enemigos, boolean[] lados, int margen=20){
                     y = height + margen;
                     break;
             }
-            if(lado == 0 || lado == 2){ // verticales
+            if(lado == 0 || lado == 2){ // vertical
                 ancho=0;
                 alto = height/enemigos[lado];
             } else if(lado == 1 || lado == 3){ // horizontal
@@ -84,7 +85,8 @@ void iniciar_oleada(){
     oleada_terminada = false;
 }
 void setup(){
-  iniciar_oleada();  
+    inicializar_teclado()
+    iniciar_oleada();  
 }
 void draw()
     if(oleada_terminada){
