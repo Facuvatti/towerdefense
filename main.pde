@@ -12,7 +12,7 @@ int[] repartir_enemigos(int cantidad_enemigos, boolean[] lados){
         if(lados[i]){
             int proporcion = random(0,1-proporcion_ocupada);
             proporcion_ocupada += proporcion;
-            enemigos_por_lado[i] = cantidad_enemigos*proporcion;
+            enemigos_por_lado[i] = int(cantidad_enemigos*proporcion);
         }
     }
     return enemigos_por_lado;
