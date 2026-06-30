@@ -4,6 +4,7 @@ int oleadas_para_incrementar_lados = 3;
 int incremento_enemigos_oleada = 3;
 int oleada = 0;
 boolean oleada_terminada;
+int kills; // No hice esta logica aun
 int[] enemigos_por_lado = new int[4];
 int[] repartir_enemigos(int cantidad_enemigos, boolean[] lados){
     int[] enemigos_por_lado = {0,0,0,0}; 
@@ -35,38 +36,36 @@ boolean[] elegir_lados(int cantidad_lados){
     return lados;
 }
 void inicializar_enemigos(int[] enemigos, boolean[] lados, int margen=20){
-    for(lado=0;lado<lados.length;lado++){
+    for(int lado=0;lado<lados.length;lado++){
         int x;
         int y; 
         int ancho;
         int alto;
-        if(lados[i]) {
+        if(lados[lado]) {
             switch(lado){
                 case 0: // izquierda
                 case 1: // arriba
-                    x = margen;
-                    y = margen;
-                    break
+                    x = -margen;
+                    y = -margen;
+                    break;
                 case 2: // derecha
-                    x = width - margen;
-                    y = margen;
-                    break
+                    x = width + margen;
+                    y = -margen;
+                    break;
                 case 3: // abajo
-                    x = 0;
-                    y = height - margen;
-                    break
+                    x = -margen;
+                    y = height + margen;
+                    break;
             }
             if(lado == 0 || lado == 2){ // verticales
                 ancho=0;
                 alto = height/enemigos[lado];
-                vertical = 1
             } else if(lado == 1 || lado == 3){ // horizontal
                 ancho = width/enemigos[lado];
                 alto=0;
-                horizontal =1;
             }
             for(int enemigo =0;enemigo<enemigos[lado];enemigo++){
-                PVector posicion = new Pvector(x+ancho*enemigo,y+alto*enemigo,10);
+                PVector posicion = new PVector(x+ancho*enemigo,y+alto*enemigo,10);
             }
         }
     }
@@ -79,7 +78,7 @@ void iniciar_oleada(){
         }
     } 
     lados = elegir_lados(cantidad_lados);
-    cantidad_enemigos = Math.floor(10 * Marh.pow(1+1/incremento_enemigos,oleadas));
+    cantidad_enemigos = Math.floor(10 * Math.pow(1+1/incremento_enemigos,oleadas));
     enemigos_por_lado = repartir_enemigos(cantidad_enemigos,lados);
     inicializar_enemigos(enemigos_por_lado,lados);
     oleada_terminada = false;
@@ -89,6 +88,7 @@ void setup(){
 }
 void draw()
     if(oleada_terminada){
+        kills=0;
         iniciar_oleada();
     } else if(kills >= cantidad_enemigos){
         oleadas++;
