@@ -53,7 +53,7 @@ void inicializar_enemigos(int[] enemigos, boolean[] lados, int margen){
             }
             for(int enemigo =0;enemigo<enemigos[lado];enemigo++){
                 PVector posicion = new PVector(x+ancho*enemigo,y+alto*enemigo,10);
-                Zombie zombie = new Zombie(posicion,30,10,3,3,jugador);
+                Zombie zombie = new Zombie(posicion,30,10,3,3);
                 zombies.add(zombie);
                 zombie.mostrar();
             }
@@ -68,7 +68,7 @@ void iniciar_oleada(){
         }
     } 
     lados = elegir_lados(cantidad_lados);
-    cantidad_enemigos = (int)(cant_inicial_enemigosit  * Math.pow(1+1/incremento_enemigos,oleadas));
+    cantidad_enemigos = (int)(cant_inicial_enemigos * Math.pow(1+1/incremento_enemigos,oleadas));
     enemigos_por_lado = repartir_enemigos(cantidad_enemigos,lados);
     inicializar_enemigos(enemigos_por_lado,lados,20);
     oleada_terminada = false;
