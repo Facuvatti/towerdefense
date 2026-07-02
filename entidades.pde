@@ -1,5 +1,8 @@
 PVector apuntar(PVector desde, PVector hasta){
     PVector direccion = PVector.sub(hasta,desde);
+    if (direccion.mag() == 0) {
+            return new PVector(0, 0); 
+    }
     direccion.normalize();
     return direccion;
 }
@@ -39,63 +42,66 @@ class Entidad {
         this.colisionando_heribles.clear();
         for(Entidad entidad : entidades){
             boolean hayColision = false;
-            if(this != entidad){
-                if(
-                    this.diametro > 0 
-                    && entidad.diametro > 0 
-                    && dist(
-                        this.posicion.x, 
-                        this.posicion.y,
-                        entidad.posicion.x,
-                        entidad.posicion.y
-                    ) < this.diametro/2+entidad.diametro/2
-                ) hayColision = true;
-                else if(
-                    this.alto > 0 
-                    && entidad.alto > 0 
-                    && this.posicion.x < entidad.posicion.x + entidad.ancho 
-                    && this.posicion.x + this.ancho > entidad.posicion.x 
-                    && this.posicion.y < entidad.posicion.y + entidad.alto 
-                    && this.posicion.y + this.alto > entidad.posicion.y
-                ) hayColision = true;
-                else if(
-                    this.alto > 0 
-                    && entidad.diametro > 0 
-                    && dist(
-                        constrain(entidad.posicion.x, this.posicion.x, this.posicion.x + this.ancho), 
-                        constrain(entidad.posicion.y, this.posicion.y, this.posicion.y + this.alto), 
-                        entidad.posicion.x, 
-                        entidad.posicion.y
-                    ) < (entidad.diametro / 2)
-                ) hayColision = true;
-                else if(
-                    this.diametro > 0
-                    && entidad.alto > 0
-                    && dist(
-                        constrain(this.posicion.x, entidad.posicion.x, entidad.posicion.x + entidad.ancho), 
-                        constrain(this.posicion.y, entidad.posicion.y, entidad.posicion.y + entidad.alto), 
-                        this.posicion.x,
-                        this.posicion.y
-                    ) < (this.diametro / 2)
-                ) hayColision = true;
+            if(this == entidad) continue;
+                if(this.diametro > 0 && entidad.diametro > 0){// Si es circulo con circulo
+                    float distancia = dist(this.posicion.x,this.posicion.y,entidad.posicion.x,entidad.posicion.y); // distancia entre sus centros
+                    float radios = (this.diametro / 2.0) + (entidad.diametro / 2.0); // Si la distancia es igual a la suma de los radios no se superponen, solo se tocan
+                    if( distancia <= radios ) hayColision = true;
+                    if( distancia < radios ){
+                        if (distancia == 0) this.posicion.add(new PVector(random(-1, 1), random(-1, 1)));
+                        float superposicion = radios-distancia; // cuantos pixeles esta uno dentro del otro
+                        PVector direccion = PVector.sub(this.posicion,entidad.posicion).normalize();
+                        direccion.mult(superposicion*0.5); // "superposicion" indica el sentido. y la magnitud. El "* 0.5" es debido a que la otra entidad tambien va a hacer este calculo entonces van a quedar justo separados pero  
+                        this.posicion.add(direccion); // correcion de posicion para dejar de estar superpuesto
+                    }
             }
+            else if(
+                this.alto > 0 
+                && entidad.alto > 0 
+                && this.posicion.x < entidad.posicion.x + entidad.ancho 
+                && this.posicion.x + this.ancho > entidad.posicion.x 
+                && this.posicion.y < entidad.posicion.y + entidad.alto 
+                && this.posicion.y + this.alto > entidad.posicion.y
+            ) hayColision = true;
+            else if(
+                this.alto > 0 
+                && entidad.diametro > 0 
+                && dist(
+                    constrain(entidad.posicion.x, this.posicion.x, this.posicion.x + this.ancho), 
+                    constrain(entidad.posicion.y, this.posicion.y, this.posicion.y + this.alto), 
+                    entidad.posicion.x, 
+                    entidad.posicion.y
+                ) < (entidad.diametro / 2)
+            ) hayColision = true;
+            else if(
+                this.diametro > 0
+                && entidad.alto > 0
+                && dist(
+                    constrain(this.posicion.x, entidad.posicion.x, entidad.posicion.x + entidad.ancho), 
+                    constrain(this.posicion.y, entidad.posicion.y, entidad.posicion.y + entidad.alto), 
+                    this.posicion.x,
+                    this.posicion.y
+                ) < (this.diametro / 2)
+            ) hayColision = true;
             if (hayColision) {
                 this.colisionandoCon.add(entidad);
-                if (this.heribles.contains(entidad.getClass())) {
-                    this.colisionando_heribles.add(entidad);
-                }
+                if (this.heribles.contains(entidad.getClass())) this.colisionando_heribles.add(entidad);
             }
         }
+        if(this.posicion.x > width) this.posicion.sub(this.posicion.x-width,0);
+        else if(this.posicion.x < 0) this.posicion.add(this.posicion.x*-1,0);
+        if(this.posicion.y > height) this.posicion.sub(0,this.posicion.y-height);
+        else if(this.posicion.y < 0) this.posicion.add(0,this.posicion.y*-1);
   }
     boolean herir(){
         if (this.damage == 0 || this.colisionando_heribles.isEmpty()) return false;
         boolean esta_listo = millis() - this.ultimo_golpe >= this.cooldown;
         if(esta_listo){
-            println(this.getClass().getSimpleName() + " GENERÓ UN IMPACTO -> esta_listo: true");
+            print(this.getClass().getSimpleName() + " GENERO UN IMPACTO a ");
             for(Entidad enemigo : this.colisionando_heribles){
-                println("Vida anterior del enemigo (" + enemigo.getClass().getSimpleName() + "): " + enemigo.vida);
+                println(enemigo.getClass().getSimpleName());
                 enemigo.vida = enemigo.vida - this.damage;
-                print("Vida actual del enemigo:",enemigo.vida);
+                println("Vida restante: ",enemigo.vida);
             }
             this.ultimo_golpe = millis();
             return true;
@@ -111,11 +117,11 @@ class Entidad {
     }
     void mover(){}
     boolean murio(){
-        return vida < 0;
+        return vida <= 0;
     }
     void actualizar(){
-        this.colision();
         this.mover();
+        this.colision();
         this.mostrar();
         this.herir();
     }
@@ -131,6 +137,7 @@ class Bala extends Entidad{
     void mover(){
         PVector paso = PVector.mult(this.direccion, this.velocidad);
         this.posicion.add(paso);
+        if(this.posicion.x > width || this.posicion.x < 0 || this.posicion.y > height || this.posicion.y < 0) this.vida = -1;
     }
     @Override
     boolean herir(){
@@ -142,28 +149,32 @@ class Bala extends Entidad{
 enum ControlesJugador {arriba,izquierda,abajo,derecha,disparo};
 class Jugador extends Entidad {
     int ultimo_disparo;
+    PVector arma;
     HashMap<ControlesJugador,String> controles;
     Jugador(PVector pos, int diametro, int vida, int velocidad, HashMap<ControlesJugador,String> controles){
-        super(pos,diametro,vida,velocidad,0,1000);
+        super(pos,diametro,vida,velocidad,0,250);
         this.controles = controles;
     }
-    @Override
-    void mover(){
+    PVector direccion_movimiento(){
         int x = 0;
         int y = 0;
         if(teclado.get(this.controles.get(ControlesJugador.izquierda))) x = -1;
         if(teclado.get(this.controles.get(ControlesJugador.derecha))) x =  1;
         if(teclado.get(this.controles.get(ControlesJugador.arriba))) y =  -1;
         if(teclado.get(this.controles.get(ControlesJugador.abajo))) y = 1;
-        PVector movimiento = new PVector(x,y);
+        return new PVector(x,y);
+    }
+    @Override
+    void mover(){
+        PVector movimiento = this.direccion_movimiento();
         movimiento.mult(this.velocidad);
         this.posicion.add(movimiento);
     }
     void mostrar_arma(){
         PVector mouse = new PVector(mouseX,mouseY);
         PVector direccion = PVector.sub(mouse, this.posicion);
-        direccion.setMag(this.diametro+7); // tamaño del arma
-        PVector arma = PVector.add(this.posicion, direccion);
+        direccion.setMag(constrain(dist(this.posicion.x,this.posicion.y,mouse.x,mouse.y),this.diametro,this.diametro+7)); // tamaño del arma
+        this.arma = PVector.add(this.posicion, direccion);
         strokeWeight(7);
         line(this.posicion.x,this.posicion.y,arma.x,arma.y);
         strokeWeight(1);
@@ -173,7 +184,7 @@ class Jugador extends Entidad {
         if (listo_para_disparar) {
             PVector mouse = new PVector(mouseX,mouseY);
             PVector direccion = apuntar(this.posicion, mouse); 
-            Bala disparo = new Bala(this.posicion.copy(),direccion,3,5,250);
+            Bala disparo = new Bala(this.arma.copy(),direccion,20,5,0);
             balas.add(disparo);
             this.ultimo_disparo = millis(); 
         }

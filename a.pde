@@ -3,11 +3,13 @@ import java.lang.reflect.Method;
 boolean[] lados = {false, false, false, false};
 int cantidad_lados=1;
 int oleadas = 0;
+int kills;
 boolean oleada_terminada;
 int oleadas_para_incrementar_lados = 3;
 Jugador jugador;
+boolean estaDisparando = false;
 int cantidad_enemigos;
-int cant_inicial_enemigos = 1;
+int cant_inicial_enemigos = 3;
 int incremento_enemigos = 3;
 int[] enemigos_por_lado = new int[4];
 ArrayList<Zombie> zombies = new ArrayList<Zombie>();
@@ -25,6 +27,7 @@ void actualizarTodo(Jugador personaje,ArrayList<? extends Entidad>... arrays) {
         entidades.add(personaje);
     }
     for (ArrayList<? extends Entidad> array : arrays) {
+        array.forEach(entidad -> {if( entidad instanceof Zombie && entidad.murio()) {kills++;}});
         array.removeIf(entidad -> entidad.murio());
         entidades.addAll(array);
     }
@@ -34,22 +37,38 @@ void actualizarTodo(Jugador personaje,ArrayList<? extends Entidad>... arrays) {
 
 void setup(){
     size(1920/2,1080/2);
+    fill(255);
     inicializarTeclado();
+    entidades.clear();
+    oleadas = 0;
+    kills = 0;
+    cantidad_enemigos = cant_inicial_enemigos;
     jugador = new Jugador(new PVector(width/2,height/2),50,100,10,controles);
     iniciar_oleada();  
 }
 void draw(){
     background(255);
     actualizarTodo(jugador,zombies,balas);
-    boolean hayZombies = entidades.stream().anyMatch(e -> e.getClass() == Zombie.class);
-    if(oleada_terminada){
-        iniciar_oleada();
-    } else if(!hayZombies){
-        oleadas++;
-        oleada_terminada = true;
+    if(entidades.stream().anyMatch(e -> e == jugador)){
+        if(estaDisparando) jugador.disparar();
+        boolean hayZombies = entidades.stream().anyMatch(e -> e.getClass() == Zombie.class);
+        if(oleada_terminada){
+            iniciar_oleada();
+        } else if(!hayZombies){
+            oleadas++;
+            oleada_terminada = true;
+        }
+    } else {
+        textSize(100);
+        fill(0);
+        text("Game Over",width/2,height/2);
+        text("Oleadas: " + oleadas + "\nkills: "+kills,width/2,(height/3)*2);
+        if(keyPressed) setup();
     }
-}
+}   
 void mousePressed(){
-    if(entidades.stream().anyMatch(e -> e == jugador))
-    jugador.disparar();
+    estaDisparando = true; 
+}
+void mouseReleased(){
+    estaDisparando = false;
 }
