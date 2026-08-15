@@ -55,7 +55,6 @@ void inicializar_enemigos(int[] enemigos, boolean[] lados, int margen){
                 PVector posicion = new PVector(x+ancho*enemigo,y+alto*enemigo,10);
                 Zombie zombie = new Zombie(posicion,30,10,(int) random(4,6),5);
                 zombies.add(zombie);
-                zombie.mostrar();
             }
         }
     }
