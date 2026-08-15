@@ -59,10 +59,13 @@ void draw(){
             oleada_terminada = true;
         }
     } else {
-        textSize(100);
+        textAlign(CENTER, CENTER);
         fill(0);
-        text("Game Over",width/2,height/2);
-        text("Oleadas: " + oleadas + "\nkills: "+kills,width/2,(height/3)*2);
+        textSize(100);
+        text("Game Over",width/2,height/4);
+        textSize(70);
+        text("Oleadas: " + oleadas + "\nkills: "+kills,width/2,(height/4)*2.5);
+        delay(1000);
         if(keyPressed) setup();
     }
 }   
