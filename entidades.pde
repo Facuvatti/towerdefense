@@ -1,8 +1,5 @@
 PVector apuntar(PVector desde, PVector hasta){
     PVector direccion = PVector.sub(hasta,desde);
-    if (direccion.mag() == 0) {
-            return new PVector(0, 0); 
-    }
     direccion.normalize();
     return direccion;
 }
@@ -48,7 +45,7 @@ class Entidad {
                     float radios = (this.diametro / 2.0) + (entidad.diametro / 2.0); // Si la distancia es igual a la suma de los radios no se superponen, solo se tocan
                     if( distancia <= radios ) hayColision = true;
                     if( distancia < radios ){
-                        if (distancia == 0) this.posicion.add(new PVector(random(-1, 1), random(-1, 1)));
+                        if (distancia == 0) return;
                         float superposicion = radios-distancia; // cuantos pixeles esta uno dentro del otro
                         PVector direccion = PVector.sub(this.posicion,entidad.posicion).normalize();
                         direccion.mult(superposicion*0.5); // "superposicion" indica el sentido. y la magnitud. El "* 0.5" es debido a que la otra entidad tambien va a hacer este calculo entonces van a quedar justo separados pero  
@@ -171,9 +168,11 @@ class Jugador extends Entidad {
         this.posicion.add(movimiento);
     }
     void mostrar_arma(){
+        if(mouseX == this.posicion.x && mouseY == this.posicion.y) return;
         PVector mouse = new PVector(mouseX,mouseY);
         PVector direccion = PVector.sub(mouse, this.posicion);
-        direccion.setMag(constrain(dist(this.posicion.x,this.posicion.y,mouse.x,mouse.y),this.diametro,this.diametro+7)); // tamaño del arma
+        int longitud = (int) constrain(dist(this.posicion.x,this.posicion.y,mouse.x,mouse.y),this.diametro,this.diametro+7); // tamaño del arma
+        direccion.setMag(longitud); 
         this.arma = PVector.add(this.posicion, direccion);
         strokeWeight(7);
         line(this.posicion.x,this.posicion.y,arma.x,arma.y);
@@ -182,6 +181,7 @@ class Jugador extends Entidad {
     void disparar(){
         boolean listo_para_disparar = millis() - this.ultimo_disparo >= this.cooldown;
         if (listo_para_disparar) {
+            if(dist(this.posicion.x,this.posicion.y,mouseX,mouseY) == 0) return;
             PVector mouse = new PVector(mouseX,mouseY);
             PVector direccion = apuntar(this.posicion, mouse); 
             Bala disparo = new Bala(this.arma.copy(),direccion,20,5,0);
@@ -208,7 +208,7 @@ class Zombie extends Entidad {
         for(Entidad entidad : entidades){
             if (this.heribles.contains(entidad.getClass())) {
                 float distancia = dist(this.posicion.x,this.posicion.y,entidad.posicion.x,entidad.posicion.y);
-                if( distancia < min) {
+                if( distancia < min && distancia > 0) {
                     min = distancia;
                     perseguir = entidad;
                 }
@@ -216,6 +216,7 @@ class Zombie extends Entidad {
         }
         if (perseguir != null) {
             PVector direccion = apuntar(this.posicion,perseguir.posicion);
+            if(dist(this.posicion.x,this.posicion.y,perseguir.posicion.x,perseguir.posicion.y) == 0) return;
             direccion.mult(this.velocidad);
             this.posicion.add(direccion);
         }
