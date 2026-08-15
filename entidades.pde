@@ -40,17 +40,17 @@ class Entidad {
         for(Entidad entidad : entidades){
             boolean hayColision = false;
             if(this == entidad) continue;
-                if(this.diametro > 0 && entidad.diametro > 0){// Si es circulo con circulo
-                    float distancia = dist(this.posicion.x,this.posicion.y,entidad.posicion.x,entidad.posicion.y); // distancia entre sus centros
-                    float radios = (this.diametro / 2.0) + (entidad.diametro / 2.0); // Si la distancia es igual a la suma de los radios no se superponen, solo se tocan
-                    if( distancia <= radios ) hayColision = true;
-                    if( distancia < radios ){
-                        if (distancia == 0) return;
-                        float superposicion = radios-distancia; // cuantos pixeles esta uno dentro del otro
-                        PVector direccion = PVector.sub(this.posicion,entidad.posicion).normalize();
-                        direccion.mult(superposicion*0.5); // "superposicion" indica el sentido. y la magnitud. El "* 0.5" es debido a que la otra entidad tambien va a hacer este calculo entonces van a quedar justo separados pero  
-                        this.posicion.add(direccion); // correcion de posicion para dejar de estar superpuesto
-                    }
+            if(this.diametro > 0 && entidad.diametro > 0){// Si es circulo con circulo
+                float distancia = dist(this.posicion.x,this.posicion.y,entidad.posicion.x,entidad.posicion.y); // distancia entre sus centros
+                float radios = (this.diametro / 2.0) + (entidad.diametro / 2.0); // Si la distancia es igual a la suma de los radios no se superponen, solo se tocan
+                if( distancia <= radios ) hayColision = true;
+                if( distancia < radios ){
+                    if (distancia == 0) return;
+                    float superposicion = radios-distancia; // cuantos pixeles esta uno dentro del otro
+                    PVector direccion = PVector.sub(this.posicion,entidad.posicion).normalize();
+                    direccion.mult(superposicion*0.5); // "superposicion" indica el sentido. y la magnitud. El "* 0.5" es debido a que la otra entidad tambien va a hacer este calculo entonces van a quedar justo separados pero  
+                    this.posicion.add(direccion); // correcion de posicion para dejar de estar superpuesto
+                }
             }
             else if(
                 this.alto > 0 
