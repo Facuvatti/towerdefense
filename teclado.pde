@@ -1,5 +1,4 @@
 import java.util.HashMap;
-import java.util.Map;
 // 1. VARIABLES BOOLEANAS INDIVIDUALES (Inicializadas en false por defecto en Java)
 boolean a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z;
 boolean n0, n1, n2, n3, n4, n5, n6, n7, n8, n9;
