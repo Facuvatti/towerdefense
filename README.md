@@ -60,8 +60,11 @@ Minimamente tiene que haber:
 
 ### Mecánicas y características
 
-- Munición que se gasta y se recolecta del suelo
+- Munición que se gasta y se recolecta del suelo (lo dropean los zombies)
+- Cura instantanea al pasar por arriba, la dropean los zombies
+- Los zombies con mas stats dropean los materiales, pero pocos.
 - Entrar y salir de la torre
+- Comprar armas con diferentes caracteristicas, agarrables del suelo en una tienda dentro de la torre (con monedas que suelten los zombies)
 - Mejora de la torre, con al menos un material
 - Zombies de distintas caracteristicas (stats y visuales)
 
@@ -75,14 +78,24 @@ Estaría muy bueno que tuviera:
 
 ### Mecánicas
 
-- Minijefes y jefes
-- Distintas armas con diferentes caracteristicas, agarrables del suelo
+- La curación es un objeto consumible que dropean los zombies. Cura con efecto incremental.
 - Multijugador
+- Minijefes y jefes
+- Armas aparecen con muy poca probabilidad o cuando el jugador o su torre tiene poca vida y pocas rondas
 - Más de un recurso para subir de nivel (y distintas cantidades para cada uno)
+- Cámara que sigue al jugador + mapa de mundo abierto + minimapa
+
+#### Minimapa
+
+- Que aparezcan los materiales a recolectar
+
+#### Multijugador
+
+En la tienda puede comprar zombies con las monedas e invocarlos con el mouse para atacar al otro jugador
 
 ### Estética y animaciones
 
-- Distinta estética con cada mejora de la torre (incremental programaticamente, que siempre haya uno distinto por la cantidad de combinaciones de posiblidades)
+- Distinta estética con cada mejora de la torre (incremental programaticamente, que siempre haya uno distinto por la cantidad de combinaciones de posiblidades o, que el jugador dibuje su torre y en cada nivel le agrega algo)
 - Estructuras y cuerpos muestran deterioro visual.
 
 ### Interfaz gráfica

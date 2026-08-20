@@ -21,6 +21,8 @@ HashMap<ControlesJugador,String> controles = new HashMap<ControlesJugador,String
   put(ControlesJugador.abajo,"s");
   put(ControlesJugador.derecha,"d");
 }};
+enum Pantallas {inicio, configuracion, solitario, multijugador, pausa, salir};
+Pantallas pantalla = Pantallas.inicio;
 void actualizarTodo(Jugador personaje,ArrayList<? extends Entidad>... arrays) {
     entidades.clear();
     if (!personaje.murio()) {
@@ -48,26 +50,38 @@ void setup(){
 }
 void draw(){
     background(255);
-    actualizarTodo(jugador,zombies,balas);
-    if(entidades.stream().anyMatch(e -> e == jugador)){
-        if(estaDisparando) jugador.disparar();
-        boolean hayZombies = entidades.stream().anyMatch(e -> e.getClass() == Zombie.class);
-        if(oleada_terminada){
-            iniciar_oleada();
-        } else if(!hayZombies){
-            oleadas++;
-            oleada_terminada = true;
-        }
-    } else {
-        textAlign(CENTER, CENTER);
-        fill(0);
-        textSize(100);
-        text("Game Over",width/2,height/4);
-        textSize(70);
-        text("Oleadas: " + oleadas + "\nkills: "+kills,width/2,(height/4)*2.5);
-        delay(1000);
-        if(keyPressed) setup();
-    }
+    switch(pantalla)
+        case inicio:
+        break;
+        case solitario:
+            actualizarTodo(jugador,zombies,balas);
+            // Si el jugador esta vivo
+            if(entidades.stream().anyMatch(e -> e == jugador)){
+                if(estaDisparando) jugador.disparar();
+                boolean hayZombies = entidades.stream().anyMatch(e -> e.getClass() == Zombie.class);
+                if(oleada_terminada){
+                    iniciar_oleada();
+                } else if(!hayZombies){
+                    oleadas++;
+                    oleada_terminada = true;
+                }
+            }
+            // Sino, si esta muerto
+            else {
+                textAlign(CENTER, CENTER);
+                fill(0);
+                textSize(100);
+                text("Game Over",width/2,height/4);
+                textSize(70);
+                text("Oleadas: " + oleadas + "\nkills: "+kills,width/2,(height/4)*2.5);
+                delay(1000);
+                if(keyPressed) setup();
+            }
+        break;
+        case configuracion;
+        break;
+        case pausa;
+        break;
 }   
 void mousePressed(){
     estaDisparando = true; 
