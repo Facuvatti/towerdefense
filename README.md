@@ -1,12 +1,16 @@
 # Tower defense zombies
 
-Integrante: Facundo Vattino
+# Integrantes 
+## Facundo Vattino
 Roles:
-
+- Game designer
+- Developer
+- Project manager
+## Santiago Villaroel
+Roles:
 - Game designer
 - Developer
 - QA testing
-- Project manager
 
 # Especificaciones técnicas
 
