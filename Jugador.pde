@@ -3,6 +3,7 @@ class Jugador extends Entidad {
   HashMap<String, Character> controles = new HashMap<String, Character>();
   PVector apuntado = new PVector(1, 0);
   boolean enTorre = false;
+  int municion = 60, municionMax = 150, sinBalasT = 0;
   int cooldownTorre = 700, ultimoCambioTorre = -10000;   // cooldown para subir/bajar (ms)
 
   Jugador(float x, float y) {
@@ -16,6 +17,7 @@ class Jugador extends Entidad {
   void reiniciar(float x, float y) {
     pos.set(x, y); vel.mult(0); vida = vidaMax; ultimoAtaque = 0;
     enTorre = false; ultimoCambioTorre = -10000;
+    municion = 60; sinBalasT = 0;
   }
 
   // --- Subir y bajar de la torre central ---
@@ -46,6 +48,7 @@ class Jugador extends Entidad {
   }
 
   void actualizar() {
+    if (sinBalasT > 0) sinBalasT--;
     if (!enTorre) {   // arriba de la torre no se camina
       PVector dir = new PVector(entrada("derecha") - entrada("izquierda"), entrada("abajo") - entrada("arriba"));
       if (dir.magSq() > 0) { dir.normalize().mult(0.75); acc.add(dir); }
@@ -63,6 +66,8 @@ class Jugador extends Entidad {
   void disparar() {
     if (!puedeAtacar()) return;
     ultimoAtaque = millis();
+    if (municion <= 0) { sinBalasT = 40; return; }   // sin balas: no dispara
+    municion--;
     PVector boca = PVector.add(pos, PVector.mult(apuntado, enTorre ? 30 : 24));
     PVector v = apuntado.copy().rotate(random(-0.05, 0.05)).mult(11);
     balas.add(new Bala(boca.x, boca.y, v, 25));

@@ -210,6 +210,28 @@ Hereda todos los atributos de `Entidad` (vida 600).
 - `subir()` / `bajar()`: al bajar sale hacia donde apunta el mouse.
 - `cargaTorre()`: progreso del cooldown (0 a 1), se dibuja como un arco alrededor del jugador.
 
+### Drop
+
+Objeto en el suelo que sueltan los zombies al morir. Se recoge al pasar por arriba (no desde arriba de la torre) y desaparece a los 15 segundos, parpadeando antes.
+Tipos: munición, cura instantánea, monedas y material (solo de los zombies tanque, y pocos).
+La munición y la cura solo se recogen si al jugador le faltan, y salen con más probabilidad cuando le quedan pocas balas o poca vida.
+
+#### Metodos
+
+- `util()`: si al jugador le sirve recogerlo.
+- `actualizar()`: movimiento desacelerado al salir del zombie e imán hacia el jugador cuando está cerca.
+- `mostrar()`: dibuja el objeto según su tipo, flotando; la moneda gira.
+
+#### Funciones (`Drop.pde`)
+
+- `soltarDrops(Zombie z)`: reparte el botín en 1 a 3 monedas y tira al azar munición, cura y material.
+- `recoger(Drop d)`: aplica el efecto del drop al jugador.
+
+### Munición del jugador
+
+El jugador empieza con 60 balas (máximo 150). Cada disparo gasta una; sin balas no dispara y aparece "SIN BALAS".
+Entre oleadas recibe +20 balas, para no quedar trabado.
+
 ### Balas
 
 #### Metodos

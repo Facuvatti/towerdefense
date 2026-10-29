@@ -8,11 +8,12 @@ Jugador jugador;
 ArrayList<Zombie> zombies = new ArrayList<Zombie>();
 ArrayList<Bala> balas = new ArrayList<Bala>();
 ArrayList<Torre> torres = new ArrayList<Torre>();
+ArrayList<Drop> drops = new ArrayList<Drop>();
 TorreCentral torre;   // null cuando fue destruida
 SistemaParticulas particulas = new SistemaParticulas();
 HashMap<Character, Boolean> teclas = new HashMap<Character, Boolean>();
 PGraphics fondo;
-int oleada = 0, monedas = 0, puntaje = 0, cuentaAtras = 0, bannerT = 0, avisoT = 0, remapIdx = -1;
+int oleada = 0, monedas = 0, materiales = 0, puntaje = 0, cuentaAtras = 0, bannerT = 0, avisoT = 0, remapIdx = -1;
 float shake = 0;
 String[] acciones = {"arriba", "abajo", "izquierda", "derecha", "torre"};
 
@@ -26,11 +27,11 @@ void setup() {
 }
 
 void nuevaPartida() {
-  zombies.clear(); balas.clear(); torres.clear(); particulas.lista.clear();
+  zombies.clear(); balas.clear(); torres.clear(); drops.clear(); particulas.lista.clear();
   crearFondo();
   torre = new TorreCentral(width/2, CENTRO_Y);
   jugador.reiniciar(width/2, CENTRO_Y + 70);
-  oleada = 0; puntaje = 0; monedas = 150; cuentaAtras = 200; bannerT = 0; avisoT = 0;
+  oleada = 0; puntaje = 0; monedas = 150; materiales = 0; cuentaAtras = 200; bannerT = 0; avisoT = 0;
   estado = JUEGO;
 }
 
@@ -50,6 +51,7 @@ void actualizarJuego() {
   for (Bala b : balas) b.actualizar();
   for (Torre t : torres) t.actualizar();
   if (torre != null) torre.actualizar();
+  for (Drop d : drops) d.actualizar();
 
   // Impactos bala -> zombie
   for (Bala b : balas)
@@ -59,9 +61,14 @@ void actualizarJuego() {
   // Limpieza de listas (recorrido inverso: sin fugas ni saltos)
   for (int i = zombies.size()-1; i >= 0; i--) {
     Zombie z = zombies.get(i);
-    if (z.murio()) { puntaje += z.puntos; monedas += z.botin; particulas.sangre(z.pos, 24); mancha(z.pos); zombies.remove(i); }
+    if (z.murio()) { puntaje += z.puntos; soltarDrops(z); particulas.sangre(z.pos, 24); mancha(z.pos); zombies.remove(i); }
   }
   for (int i = balas.size()-1; i >= 0; i--) if (balas.get(i).murio()) balas.remove(i);
+  for (int i = drops.size()-1; i >= 0; i--) {   // recoleccion al pasar por arriba
+    Drop d = drops.get(i);
+    if (d.alcanzable() && d.colision(jugador)) { recoger(d); drops.remove(i); }
+    else if (d.murio()) drops.remove(i);
+  }
   for (int i = torres.size()-1; i >= 0; i--) {
     if (torres.get(i).murio()) { particulas.explosion(torres.get(i).pos); shake = 8; torres.remove(i); }
   }
@@ -77,7 +84,10 @@ void actualizarJuego() {
   // Flujo de oleadas
   if (zombies.isEmpty()) {
     if (cuentaAtras <= 0 && oleada >= 0) {
-      if (oleada > 0) { monedas += 20*oleada; jugador.vida = min(jugador.vidaMax, jugador.vida + 25); }
+      if (oleada > 0) {
+        monedas += 20*oleada; jugador.vida = min(jugador.vidaMax, jugador.vida + 25);
+        jugador.municion = min(jugador.municionMax, jugador.municion + 20);   // para no quedar trabado sin balas
+      }
       cuentaAtras = 210;
     } else if (--cuentaAtras <= 0) { iniciar_oleada(); }
   }
@@ -104,6 +114,7 @@ void dibujarJuego() {
   pushMatrix();
   translate(random(-shake, shake), random(-shake, shake)); shake *= 0.85;
   image(fondo, 0, 0);
+  for (Drop d : drops) d.mostrar();
   if (torre != null) torre.mostrar();
   for (Torre t : torres) t.mostrar();
   for (Zombie z : zombies) z.mostrar();
@@ -124,6 +135,7 @@ void previsualizarTorre() {
 }
 
 void indicadorTorre() {   // aviso de la tecla para subir/bajar
+  if (jugador.sinBalasT > 0) texto("SIN BALAS", jugador.pos.x, jugador.pos.y - 32, 12, color(255, 90, 80), CENTER);
   String tecla = str(Character.toUpperCase(jugador.controles.get("torre")));
   if (jugador.enTorre) texto(tecla + ": bajar", jugador.pos.x, jugador.pos.y + 50, 12, color(255, 230), CENTER);
   else if (jugador.cercaDeTorre())
@@ -133,21 +145,25 @@ void indicadorTorre() {   // aviso de la tecla para subir/bajar
 
 void dibujarHUD() {
   rectMode(CORNER); noStroke(); fill(0, 150); rect(0, 0, width, 46);
-  barra(16, 15, 170, 16, jugador.vida / (float) jugador.vidaMax, color(210, 50, 60));
-  texto("HP " + max(0, jugador.vida), 101, 23, 12, color(255), CENTER);
+  barra(16, 15, 140, 16, jugador.vida / (float) jugador.vidaMax, color(210, 50, 60));
+  texto("HP " + max(0, jugador.vida), 86, 23, 12, color(255), CENTER);
   if (torre != null) {
-    barra(202, 15, 170, 16, torre.vida / (float) torre.vidaMax, color(150, 150, 165));
-    texto("TORRE " + max(0, torre.vida), 287, 23, 12, color(255), CENTER);
-  } else texto("TORRE CAIDA", 287, 23, 12, color(230, 70, 60), CENTER);
-  texto("OLEADA " + oleada, 396, 23, 18, color(255, 220, 80), LEFT);
-  texto("$ " + monedas, 560, 23, 18, color(110, 240, 130), LEFT);
+    barra(170, 15, 140, 16, torre.vida / (float) torre.vidaMax, color(150, 150, 165));
+    texto("TORRE " + max(0, torre.vida), 240, 23, 12, color(255), CENTER);
+  } else texto("TORRE CAIDA", 240, 23, 12, color(230, 70, 60), CENTER);
+  texto("OLEADA " + oleada, 326, 23, 18, color(255, 220, 80), LEFT);
+  boolean pocas = jugador.municion < 15;
+  if (!(jugador.municion == 0 && (frameCount / 15) % 2 == 0))   // parpadea sin balas
+    texto("BALAS " + jugador.municion, 446, 23, 18, pocas ? color(255, 90, 80) : color(220, 180, 70), LEFT);
+  texto("$ " + monedas, 580, 23, 18, color(110, 240, 130), LEFT);
+  texto("MAT " + materiales, 670, 23, 18, color(150, 200, 230), LEFT);
   texto("PUNTOS " + puntaje, width - 16, 23, 18, color(255), RIGHT);
   texto("WASD mover  |  " + Character.toUpperCase(jugador.controles.get("torre")) + " subir/bajar torre  |  Click izq. disparar  |  Click der. torreta ($" + COSTO_TORRE + ")  |  P pausa",
         width/2, height - 16, 12, color(210, 210, 210, 200), CENTER);
   if (avisoT > 0) texto("LA TORRE CAYO", width/2, height*0.42, 40, color(230, 70, 60, min(255, avisoT*4)), CENTER);
   if (bannerT > 0) texto("OLEADA " + oleada, width/2, height*0.3, 56, color(255, 220, 80, min(255, bannerT*4)), CENTER);
   else if (estado == JUEGO && zombies.isEmpty() && oleada > 0)
-    texto("Siguiente oleada en " + ceil(cuentaAtras/60.0) + "  (+$" + 20*oleada + ")", width/2, height*0.3, 22, color(255), CENTER);
+    texto("Siguiente oleada en " + ceil(cuentaAtras/60.0) + "  (+$" + 20*oleada + "  +20 balas)", width/2, height*0.3, 22, color(255), CENTER);
   rectMode(CENTER);
 }
 
