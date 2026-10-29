@@ -2,31 +2,35 @@
 // Main: estados, bucle, colisiones globales, HUD y menu.
 final int MENU = 0, JUEGO = 1, PAUSA = 2, FIN = 3;
 final int COSTO_TORRE = 100;
+final int CENTRO_Y = 343;   // centro del area jugable (debajo del HUD)
 int estado = MENU;
 Jugador jugador;
 ArrayList<Zombie> zombies = new ArrayList<Zombie>();
 ArrayList<Bala> balas = new ArrayList<Bala>();
 ArrayList<Torre> torres = new ArrayList<Torre>();
+TorreCentral torre;   // null cuando fue destruida
 SistemaParticulas particulas = new SistemaParticulas();
 HashMap<Character, Boolean> teclas = new HashMap<Character, Boolean>();
 PGraphics fondo;
-int oleada = 0, monedas = 0, puntaje = 0, cuentaAtras = 0, bannerT = 0, remapIdx = -1;
+int oleada = 0, monedas = 0, puntaje = 0, cuentaAtras = 0, bannerT = 0, avisoT = 0, remapIdx = -1;
 float shake = 0;
-String[] acciones = {"arriba", "abajo", "izquierda", "derecha"};
+String[] acciones = {"arriba", "abajo", "izquierda", "derecha", "torre"};
 
 void setup() {
   size(960, 640);
   noSmooth();
   textFont(createFont("Monospaced.bold", 16));
   crearFondo();
-  jugador = new Jugador(width/2, height/2);
+  torre = new TorreCentral(width/2, CENTRO_Y);
+  jugador = new Jugador(width/2, CENTRO_Y + 70);
 }
 
 void nuevaPartida() {
   zombies.clear(); balas.clear(); torres.clear(); particulas.lista.clear();
   crearFondo();
-  jugador.reiniciar(width/2, height/2);
-  oleada = 0; puntaje = 0; monedas = 150; cuentaAtras = 200; bannerT = 0;
+  torre = new TorreCentral(width/2, CENTRO_Y);
+  jugador.reiniciar(width/2, CENTRO_Y + 70);
+  oleada = 0; puntaje = 0; monedas = 150; cuentaAtras = 200; bannerT = 0; avisoT = 0;
   estado = JUEGO;
 }
 
@@ -45,6 +49,7 @@ void actualizarJuego() {
   for (Zombie z : zombies) z.actualizar();
   for (Bala b : balas) b.actualizar();
   for (Torre t : torres) t.actualizar();
+  if (torre != null) torre.actualizar();
 
   // Impactos bala -> zombie
   for (Bala b : balas)
@@ -60,6 +65,12 @@ void actualizarJuego() {
   for (int i = torres.size()-1; i >= 0; i--) {
     if (torres.get(i).murio()) { particulas.explosion(torres.get(i).pos); shake = 8; torres.remove(i); }
   }
+  if (torre != null && torre.murio()) {   // cae la torre central: el jugador baja y no puede volver
+    if (jugador.enTorre) jugador.bajar();
+    particulas.explosion(torre.pos); particulas.explosion(torre.pos);
+    escombros(torre.pos); shake = 14; avisoT = 180;
+    torre = null;
+  }
   particulas.actualizar();
   if (jugador.murio()) { estado = FIN; particulas.explosion(jugador.pos); shake = 12; }
 
@@ -71,6 +82,7 @@ void actualizarJuego() {
     } else if (--cuentaAtras <= 0) { iniciar_oleada(); }
   }
   if (bannerT > 0) bannerT--;
+  if (avisoT > 0) avisoT--;
 }
 
 void mancha(PVector p) {
@@ -78,17 +90,27 @@ void mancha(PVector p) {
   fondo.rect(p.x - 6, p.y - 4, random(6, 14), random(5, 10)); fondo.endDraw();
 }
 
+void escombros(PVector p) {
+  fondo.beginDraw(); fondo.noStroke();
+  for (int i = 0; i < 26; i++) {
+    fondo.fill(random(50, 110), random(46, 100), random(40, 90));
+    fondo.rect(p.x + random(-40, 40), p.y + random(-40, 40), random(4, 12), random(4, 10));
+  }
+  fondo.endDraw();
+}
+
 void dibujarJuego() {
   rectMode(CENTER);
   pushMatrix();
   translate(random(-shake, shake), random(-shake, shake)); shake *= 0.85;
   image(fondo, 0, 0);
+  if (torre != null) torre.mostrar();
   for (Torre t : torres) t.mostrar();
   for (Zombie z : zombies) z.mostrar();
   for (Bala b : balas) b.mostrar();
   if (estado != FIN) jugador.mostrar();
   particulas.mostrar();
-  if (estado == JUEGO) previsualizarTorre();
+  if (estado == JUEGO) { previsualizarTorre(); indicadorTorre(); }
   popMatrix();
   dibujarHUD();
 }
@@ -101,15 +123,28 @@ void previsualizarTorre() {
   rect(mouseX, mouseY, 28, 28);
 }
 
+void indicadorTorre() {   // aviso de la tecla para subir/bajar
+  String tecla = str(Character.toUpperCase(jugador.controles.get("torre")));
+  if (jugador.enTorre) texto(tecla + ": bajar", jugador.pos.x, jugador.pos.y + 50, 12, color(255, 230), CENTER);
+  else if (jugador.cercaDeTorre())
+    texto(tecla + ": subir", torre.pos.x, torre.pos.y + 52, 12,
+          jugador.puedeCambiarTorre() ? color(255, 230) : color(160, 160), CENTER);
+}
+
 void dibujarHUD() {
   rectMode(CORNER); noStroke(); fill(0, 150); rect(0, 0, width, 46);
-  barra(16, 15, 200, 16, jugador.vida / (float) jugador.vidaMax, color(210, 50, 60));
-  texto("HP " + max(0, jugador.vida), 116, 23, 12, color(255), CENTER);
-  texto("OLEADA " + oleada, 340, 23, 18, color(255, 220, 80), LEFT);
-  texto("$ " + monedas, 520, 23, 18, color(110, 240, 130), LEFT);
+  barra(16, 15, 170, 16, jugador.vida / (float) jugador.vidaMax, color(210, 50, 60));
+  texto("HP " + max(0, jugador.vida), 101, 23, 12, color(255), CENTER);
+  if (torre != null) {
+    barra(202, 15, 170, 16, torre.vida / (float) torre.vidaMax, color(150, 150, 165));
+    texto("TORRE " + max(0, torre.vida), 287, 23, 12, color(255), CENTER);
+  } else texto("TORRE CAIDA", 287, 23, 12, color(230, 70, 60), CENTER);
+  texto("OLEADA " + oleada, 396, 23, 18, color(255, 220, 80), LEFT);
+  texto("$ " + monedas, 560, 23, 18, color(110, 240, 130), LEFT);
   texto("PUNTOS " + puntaje, width - 16, 23, 18, color(255), RIGHT);
-  texto("WASD mover  |  Click izq. disparar  |  Click der. torre ($" + COSTO_TORRE + ")  |  P pausa",
+  texto("WASD mover  |  " + Character.toUpperCase(jugador.controles.get("torre")) + " subir/bajar torre  |  Click izq. disparar  |  Click der. torreta ($" + COSTO_TORRE + ")  |  P pausa",
         width/2, height - 16, 12, color(210, 210, 210, 200), CENTER);
+  if (avisoT > 0) texto("LA TORRE CAYO", width/2, height*0.42, 40, color(230, 70, 60, min(255, avisoT*4)), CENTER);
   if (bannerT > 0) texto("OLEADA " + oleada, width/2, height*0.3, 56, color(255, 220, 80, min(255, bannerT*4)), CENTER);
   else if (estado == JUEGO && zombies.isEmpty() && oleada > 0)
     texto("Siguiente oleada en " + ceil(cuentaAtras/60.0) + "  (+$" + 20*oleada + ")", width/2, height*0.3, 22, color(255), CENTER);
@@ -175,7 +210,8 @@ void crearFondo() {
 void mousePressed() {
   if (estado == MENU) { if (remapIdx < 0 && abs(mouseX - width/2) < 130 && abs(mouseY - 380) < 27) nuevaPartida(); return; }
   if (estado == JUEGO && mouseButton == RIGHT && monedas >= COSTO_TORRE
-      && dist(mouseX, mouseY, jugador.pos.x, jugador.pos.y) > 30) {
+      && dist(mouseX, mouseY, jugador.pos.x, jugador.pos.y) > 30
+      && (torre == null || dist(mouseX, mouseY, torre.pos.x, torre.pos.y) > torre.radio + 20)) {
     monedas -= COSTO_TORRE; torres.add(new Torre(mouseX, mouseY));
   }
 }
@@ -185,13 +221,15 @@ void keyPressed() {
   char k = Character.toLowerCase(key);
   boolean enter = (key == ENTER || key == RETURN);
   if (estado == MENU) {
-    if (remapIdx >= 0 && !enter) { jugador.controles.put(acciones[remapIdx], k); remapIdx = (remapIdx + 1 >= 4) ? -1 : remapIdx + 1; }
+    if (remapIdx >= 0 && !enter) { jugador.controles.put(acciones[remapIdx], k); remapIdx = (remapIdx + 1 >= acciones.length) ? -1 : remapIdx + 1; }
     else if (k == 'r') remapIdx = 0;
     else if (enter) nuevaPartida();
     return;
   }
   if (k == 'p' && estado == JUEGO) estado = PAUSA; else if (k == 'p' && estado == PAUSA) estado = JUEGO;
   if (estado == FIN && enter) nuevaPartida();
+  Boolean yaApretada = teclas.get(k);   // solo al apretar, no mientras se mantiene
+  if (estado == JUEGO && k == jugador.controles.get("torre") && (yaApretada == null || !yaApretada)) jugador.alternarTorre();
   teclas.put(k, true);
 }
 

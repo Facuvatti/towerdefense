@@ -1,4 +1,4 @@
-// Zombie: persigue a la entidad herible mas cercana (jugador o torre).
+// Zombie: persigue a la entidad herible mas cercana (jugador, torre central o torretas).
 class Zombie extends Entidad {
   int tipo, puntos, botin;
   float acel, fase = random(TWO_PI);
@@ -16,9 +16,11 @@ class Zombie extends Entidad {
   }
 
   Entidad objetivo() {
-    Entidad m = jugador; float md = PVector.dist(pos, jugador.pos);
+    Entidad m = null; float md = Float.MAX_VALUE;
+    if (!jugador.enTorre) { m = jugador; md = PVector.dist(pos, jugador.pos); }   // arriba de la torre no lo alcanzan
+    if (torre != null) { float d = PVector.dist(pos, torre.pos); if (d < md) { md = d; m = torre; } }
     for (Torre t : torres) { float d = PVector.dist(pos, t.pos); if (d < md) { md = d; m = t; } }
-    return m;
+    return m != null ? m : jugador;
   }
 
   void actualizar() {
@@ -31,6 +33,7 @@ class Zombie extends Entidad {
       if (m > 0 && m < radio + o.radio) acc.add(e.setMag(0.25));
     }
     super.actualizar();
+    if (torre != null && obj != torre && colision(torre)) separarDe(torre);   // la rodean, no la atraviesan
     if (colision(obj)) {
       separarDe(obj);
       if (puedeAtacar()) {

@@ -2,7 +2,10 @@
 int[] elegir_lados(int n) {   // n lados distintos (0 arriba, 1 der, 2 abajo, 3 izq)
   ArrayList<Integer> l = new ArrayList<Integer>();
   for (int i = 0; i < 4; i++) l.add(i);
-  java.util.Collections.shuffle(l);
+  for (int i = l.size()-1; i > 0; i--) {   // mezcla Fisher-Yates
+    int j = (int) random(i + 1);
+    int t = l.get(i); l.set(i, l.get(j)); l.set(j, t);
+  }
   int[] r = new int[n];
   for (int i = 0; i < n; i++) r[i] = l.get(i);
   return r;
