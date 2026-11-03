@@ -42,6 +42,7 @@ El usuario mueve al personaje con las teclas `W` `A` `S` `D`, por defecto. Pero 
 El cursor apunta el arma.
 Desde la ubicación del jugador hacia el mouse es la dirección y sentido en el que van a ir las balas que salgan de su arma.
 Con `E` (configurable) el jugador se sube o se baja de la torre central, estando cerca de ella. Hay un cooldown entre subir y bajar.
+Estando arriba de la torre, con `Q` (configurable) abre la tienda. Con las teclas `1` a `9` cambia entre las armas compradas.
 
 ## Assets
 
@@ -227,6 +228,29 @@ La munición y la cura solo se recogen si al jugador le faltan, y salen con más
 - `soltarDrops(Zombie z)`: reparte el botín en 1 a 3 monedas y tira al azar munición, cura y material.
 - `recoger(Drop d)`: aplica el efecto del drop al jugador.
 
+### Tienda (`Tienda.pde`)
+
+Está dentro de la torre: solo se abre estando arriba, y pausa el juego mientras está abierta. Si la torre cae, no hay más tienda.
+Se compra con monedas (y materiales para mejorar la torre):
+
+- Armas: Escopeta ($250), Francotirador ($350), Ametralladora ($450). Las compradas se pueden volver a equipar gratis.
+- Munición +30 ($40), botiquín +50 vida ($50), reparar torre +150 ($60).
+- Mejorar torre: nivel `n` a `n+1` cuesta `$120·n` y `n` materiales. Cada nivel da +200 de vida máxima, la repara 200 y le agrega una bandera (dorada al nivel máximo, 5).
+
+`ItemTienda` sabe su nombre, detalle, precio, si está disponible y qué hace al comprarse.
+
+### Arma (`Arma.pde`)
+
+Define cómo dispara el jugador: daño, cooldown, cantidad de perdigones, dispersión, velocidad y alcance de la bala, cuántos zombies atraviesa, retroceso y su aspecto.
+`disparar(boca, dir)` crea las balas. `catalogo` tiene todas las armas; la primera (Pistola) es la inicial.
+
+| Arma | Daño | Disparos/min | Particularidad |
+|---|---|---|---|
+| Pistola | 25 | ~430 | Inicial |
+| Escopeta | 18 x6 | ~90 | Perdigones abiertos, poco alcance |
+| Francotirador | 120 | ~65 | Atraviesa 3 zombies |
+| Ametralladora | 14 | ~860 | Gasta munición muy rápido |
+
 ### Munición del jugador
 
 El jugador empieza con 60 balas (máximo 150). Cada disparo gasta una; sin balas no dispara y aparece "SIN BALAS".
@@ -242,6 +266,8 @@ Entre oleadas recibe +20 balas, para no quedar trabado.
 #### Atributos
 
 - `direccion` : Vector con direccion y sentido del movimiento de la bala.
+- `alcance`: frames que vive la bala.
+- `perfora`: cuántos zombies más puede atravesar; `golpeados` evita pegarle dos veces al mismo.
 - Hereda el resto de los atributos de `Entidad`.
 
 ## Procedimientos complejos y críticos

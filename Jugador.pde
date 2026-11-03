@@ -4,6 +4,8 @@ class Jugador extends Entidad {
   PVector apuntado = new PVector(1, 0);
   boolean enTorre = false;
   int municion = 60, municionMax = 150, sinBalasT = 0;
+  ArrayList<Arma> armas = new ArrayList<Arma>();   // armas compradas
+  Arma arma;                                       // arma equipada
   int cooldownTorre = 700, ultimoCambioTorre = -10000;   // cooldown para subir/bajar (ms)
 
   Jugador(float x, float y) {
@@ -11,13 +13,20 @@ class Jugador extends Entidad {
     velMax = 3.4;
     controles.put("arriba", 'w'); controles.put("abajo", 's');
     controles.put("izquierda", 'a'); controles.put("derecha", 'd');
-    controles.put("torre", 'e');
+    controles.put("torre", 'e'); controles.put("tienda", 'q');
+    armas.add(catalogo.get(0)); equipar(0);
+  }
+
+  void equipar(int i) {
+    if (i < 0 || i >= armas.size()) return;
+    arma = armas.get(i); cooldown = arma.cooldown;
   }
 
   void reiniciar(float x, float y) {
     pos.set(x, y); vel.mult(0); vida = vidaMax; ultimoAtaque = 0;
     enTorre = false; ultimoCambioTorre = -10000;
     municion = 60; sinBalasT = 0;
+    armas.clear(); armas.add(catalogo.get(0)); equipar(0);
   }
 
   // --- Subir y bajar de la torre central ---
@@ -68,12 +77,11 @@ class Jugador extends Entidad {
     ultimoAtaque = millis();
     if (municion <= 0) { sinBalasT = 40; return; }   // sin balas: no dispara
     municion--;
-    PVector boca = PVector.add(pos, PVector.mult(apuntado, enTorre ? 30 : 24));
-    PVector v = apuntado.copy().rotate(random(-0.05, 0.05)).mult(11);
-    balas.add(new Bala(boca.x, boca.y, v, 25));
+    PVector boca = PVector.add(pos, PVector.mult(apuntado, (radio + arma.largo - 4) * (enTorre ? 1.2 : 1)));
+    arma.disparar(boca, apuntado);
     particulas.chispas(boca, angulo);
-    vel.sub(PVector.mult(apuntado, 0.6));   // retroceso
-    shake += 1.2;
+    vel.sub(PVector.mult(apuntado, arma.retroceso));   // retroceso
+    shake += arma.retroceso * 2;
   }
 
   void mostrar() {
@@ -87,7 +95,7 @@ class Jugador extends Entidad {
     noStroke(); fill(0, 70); ellipse(0, 4, radio*2.4, radio*1.6);
     rotate(angulo);
     color c = flash > 0 ? color(255) : color(60, 110, 200);
-    fill(35); rect(radio + 6, 0, radio + 12, 5);
+    fill(arma.c); rect(radio - 5 + arma.largo/2, 0, arma.largo, arma.perdigones > 1 ? 6 : 5);
     fill(230, 190, 150); rect(radio*0.8, -radio*0.75, 7, 5); rect(radio + 4, radio*0.5, 7, 5);
     fill(c); rect(0, 0, radio*1.7, radio*2.2);
     fill(lerpColor(c, color(0), 0.4)); rect(-radio*0.4, 0, radio*0.6, radio*1.6);

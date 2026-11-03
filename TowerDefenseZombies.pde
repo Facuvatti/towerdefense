@@ -1,6 +1,6 @@
 // TOWER DEFENSE ZOMBIES - Facundo Vattino & Santiago Villarroel
 // Main: estados, bucle, colisiones globales, HUD y menu.
-final int MENU = 0, JUEGO = 1, PAUSA = 2, FIN = 3;
+final int MENU = 0, JUEGO = 1, PAUSA = 2, FIN = 3, TIENDA = 4;
 final int COSTO_TORRE = 100;
 final int CENTRO_Y = 343;   // centro del area jugable (debajo del HUD)
 int estado = MENU;
@@ -10,20 +10,23 @@ ArrayList<Bala> balas = new ArrayList<Bala>();
 ArrayList<Torre> torres = new ArrayList<Torre>();
 ArrayList<Drop> drops = new ArrayList<Drop>();
 TorreCentral torre;   // null cuando fue destruida
+Tienda tienda;
 SistemaParticulas particulas = new SistemaParticulas();
 HashMap<Character, Boolean> teclas = new HashMap<Character, Boolean>();
 PGraphics fondo;
 int oleada = 0, monedas = 0, materiales = 0, puntaje = 0, cuentaAtras = 0, bannerT = 0, avisoT = 0, remapIdx = -1;
 float shake = 0;
-String[] acciones = {"arriba", "abajo", "izquierda", "derecha", "torre"};
+String[] acciones = {"arriba", "abajo", "izquierda", "derecha", "torre", "tienda"};
 
 void setup() {
   size(960, 640);
   noSmooth();
   textFont(createFont("Monospaced.bold", 16));
   crearFondo();
+  crearCatalogo();
   torre = new TorreCentral(width/2, CENTRO_Y);
   jugador = new Jugador(width/2, CENTRO_Y + 70);
+  tienda = new Tienda();
 }
 
 void nuevaPartida() {
@@ -41,6 +44,7 @@ void draw() {
   if (estado == JUEGO) actualizarJuego();
   dibujarJuego();
   if (estado == PAUSA) overlay("PAUSA", "P para continuar");
+  if (estado == TIENDA) tienda.mostrar();
   if (estado == FIN) overlay("GAME OVER", "Oleada " + oleada + "   Puntaje " + puntaje + "\nENTER para reiniciar");
 }
 
@@ -56,7 +60,11 @@ void actualizarJuego() {
   // Impactos bala -> zombie
   for (Bala b : balas)
     for (Zombie z : zombies)
-      if (b.colision(z)) { z.herir(b.dano); particulas.sangre(b.pos, 5); b.vida = 0; break; }
+      if (b.vida > 0 && !b.golpeados.contains(z) && b.colision(z)) {
+        z.herir(b.dano); particulas.sangre(b.pos, 5);
+        if (b.perfora > 0) { b.perfora--; b.golpeados.add(z); }   // atraviesa y sigue
+        else { b.vida = 0; break; }
+      }
 
   // Limpieza de listas (recorrido inverso: sin fugas ni saltos)
   for (int i = zombies.size()-1; i >= 0; i--) {
@@ -137,7 +145,9 @@ void previsualizarTorre() {
 void indicadorTorre() {   // aviso de la tecla para subir/bajar
   if (jugador.sinBalasT > 0) texto("SIN BALAS", jugador.pos.x, jugador.pos.y - 32, 12, color(255, 90, 80), CENTER);
   String tecla = str(Character.toUpperCase(jugador.controles.get("torre")));
-  if (jugador.enTorre) texto(tecla + ": bajar", jugador.pos.x, jugador.pos.y + 50, 12, color(255, 230), CENTER);
+  if (jugador.enTorre)
+    texto(tecla + ": bajar   " + Character.toUpperCase(jugador.controles.get("tienda")) + ": tienda",
+          jugador.pos.x, jugador.pos.y + 50, 12, color(255, 230), CENTER);
   else if (jugador.cercaDeTorre())
     texto(tecla + ": subir", torre.pos.x, torre.pos.y + 52, 12,
           jugador.puedeCambiarTorre() ? color(255, 230) : color(160, 160), CENTER);
@@ -160,6 +170,8 @@ void dibujarHUD() {
   texto("PUNTOS " + puntaje, width - 16, 23, 18, color(255), RIGHT);
   texto("WASD mover  |  " + Character.toUpperCase(jugador.controles.get("torre")) + " subir/bajar torre  |  Click izq. disparar  |  Click der. torreta ($" + COSTO_TORRE + ")  |  P pausa",
         width/2, height - 16, 12, color(210, 210, 210, 200), CENTER);
+  texto("ARMA: " + jugador.arma.nombre + (jugador.armas.size() > 1 ? "  [1-" + jugador.armas.size() + "]" : ""),
+        16, height - 40, 13, color(230), LEFT);
   if (avisoT > 0) texto("LA TORRE CAYO", width/2, height*0.42, 40, color(230, 70, 60, min(255, avisoT*4)), CENTER);
   if (bannerT > 0) texto("OLEADA " + oleada, width/2, height*0.3, 56, color(255, 220, 80, min(255, bannerT*4)), CENTER);
   else if (estado == JUEGO && zombies.isEmpty() && oleada > 0)
@@ -225,6 +237,7 @@ void crearFondo() {
 
 void mousePressed() {
   if (estado == MENU) { if (remapIdx < 0 && abs(mouseX - width/2) < 130 && abs(mouseY - 380) < 27) nuevaPartida(); return; }
+  if (estado == TIENDA) { if (mouseButton == LEFT) tienda.click(); return; }
   if (estado == JUEGO && mouseButton == RIGHT && monedas >= COSTO_TORRE
       && dist(mouseX, mouseY, jugador.pos.x, jugador.pos.y) > 30
       && (torre == null || dist(mouseX, mouseY, torre.pos.x, torre.pos.y) > torre.radio + 20)) {
@@ -245,7 +258,13 @@ void keyPressed() {
   if (k == 'p' && estado == JUEGO) estado = PAUSA; else if (k == 'p' && estado == PAUSA) estado = JUEGO;
   if (estado == FIN && enter) nuevaPartida();
   Boolean yaApretada = teclas.get(k);   // solo al apretar, no mientras se mantiene
-  if (estado == JUEGO && k == jugador.controles.get("torre") && (yaApretada == null || !yaApretada)) jugador.alternarTorre();
+  boolean nueva = yaApretada == null || !yaApretada;
+  if (estado == JUEGO && k == jugador.controles.get("torre") && nueva) jugador.alternarTorre();
+  if (k == jugador.controles.get("tienda") && nueva) {   // la tienda esta dentro de la torre
+    if (estado == JUEGO && jugador.enTorre) { estado = TIENDA; tienda.mensajeT = 0; }
+    else if (estado == TIENDA) estado = JUEGO;
+  }
+  if (estado == JUEGO && k >= '1' && k <= '9') jugador.equipar(k - '1');
   teclas.put(k, true);
 }
 
