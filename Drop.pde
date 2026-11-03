@@ -68,7 +68,7 @@ class Drop extends Entidad {
 
 // Reparte lo que suelta un zombie al morir. Mas probabilidad de balas/cura si al jugador le faltan.
 void soltarDrops(Zombie z) {
-  int n = z.tipo == 2 ? 3 : (random(1) < 0.5 ? 1 : 2);   // el botin se divide en 1-3 monedas
+  int n = z.tipo == JEFE ? 5 : (z.tipo == 2 ? 3 : (random(1) < 0.5 ? 1 : 2));   // el botin se divide en monedas
   int resto = z.botin;
   for (int i = 0; i < n; i++) {
     int v = (i == n - 1) ? resto : resto / n;
@@ -80,6 +80,7 @@ void soltarDrops(Zombie z) {
   float pCura = jugador.vida < jugador.vidaMax * 0.4 ? 0.16 : 0.06;
   if (random(1) < pCura) drops.add(new Drop(z.pos, D_CURA, 25));
   if (z.tipo == 2 && random(1) < 0.5) drops.add(new Drop(z.pos, D_MATERIAL, 1));   // solo los tanques, y pocos
+  if (z.tipo == JEFE) for (int i = 0; i < 3; i++) drops.add(new Drop(z.pos, D_MATERIAL, 1));
 }
 
 void recoger(Drop d) {

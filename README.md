@@ -42,6 +42,7 @@ El usuario mueve al personaje con las teclas `W` `A` `S` `D`, por defecto. Pero 
 El cursor apunta el arma.
 Desde la ubicación del jugador hacia el mouse es la dirección y sentido en el que van a ir las balas que salgan de su arma.
 Con `E` (configurable) el jugador se sube o se baja de la torre central, estando cerca de ella. Hay un cooldown entre subir y bajar.
+Con `B` (configurable) entra o sale del modo construcción: arrastrando el click izquierdo dibuja barreras en vez de disparar.
 Estando arriba de la torre, con `Q` (configurable) abre la tienda. Con las teclas `1` a `9` cambia entre las armas compradas.
 
 ## Assets
@@ -227,6 +228,31 @@ La munición y la cura solo se recogen si al jugador le faltan, y salen con más
 
 - `soltarDrops(Zombie z)`: reparte el botín en 1 a 3 monedas y tira al azar munición, cura y material.
 - `recoger(Drop d)`: aplica el efecto del drop al jugador.
+
+### Barrera (`Barrera.pde`)
+
+Muro dibujado a mano con el mouse. Es una polilínea (`ArrayList<PVector>`) con vida, que crece con su largo.
+
+- **Madera:** cada píxel dibujado gasta madera. Se empieza con 300 y se compra más en la tienda (+150 por $40).
+- **Largo máximo:** cada pedazo mide como mucho 130 px. Al llegar al límite el trazo se corta y hay que soltar el mouse para empezar otro.
+- **Hueco obligatorio:** entre una barrera y otra (y entre una barrera y la torre) tiene que quedar al menos 32 px. Así nunca se puede cerrar la torre: los zombies comunes (y los tanques, de 30 px) pasan por los huecos. Si el trazo se acerca demasiado a otra barrera, se corta ahí. En modo construcción las zonas prohibidas se ven en rojo.
+- **Zombies:** chocan con las barreras y las rodean deslizándose a lo largo del muro. Las balas pasan por encima.
+- **Jefes:** son más anchos que el hueco, así que no pasan: golpean la barrera hasta romperla. La barrera muestra su deterioro y una barra de vida.
+
+#### Metodos
+
+- `agregar(p)`: suma un punto al trazo, aumenta el largo y la vida.
+- `puntoCercano(p)` / `distancia(p)`: proyección de un punto sobre la polilínea; guarda la `tangente` del segmento más cercano.
+- `empujar(e)`: resuelve la colisión círculo-barrera empujando a la entidad afuera.
+
+#### Funciones
+
+- `construirBarrera()`: mientras se arrastra el mouse, avanza de a 8 px validando cada punto (largo, madera y huecos).
+- `motivoInvalido(p, propia)`: por qué no se puede poner un punto ahí (o `null`).
+
+### Jefe
+
+Zombie tipo 3: aparece cada 5 oleadas (uno más cada vez). Mucha vida, lento, pega fuerte, rompe barreras y suelta 3 materiales.
 
 ### Tienda (`Tienda.pde`)
 

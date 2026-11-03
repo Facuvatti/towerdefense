@@ -51,5 +51,8 @@ void iniciar_oleada() {
   int nLados = constrain(1 + oleada / 2, 1, 4);
   int[] lados = elegir_lados(nLados);
   inicializar_enemigos(lados, repartir_enemigos(total, nLados));
+  oleadaConJefe = oleada % 5 == 0;   // cada 5 oleadas vienen jefes (uno mas cada vez)
+  if (oleadaConJefe)
+    for (int i = 0; i < oleada / 5; i++) { PVector p = punto_borde(lados[i % lados.length]); zombies.add(new Zombie(p.x, p.y, JEFE)); }
   bannerT = 120;
 }

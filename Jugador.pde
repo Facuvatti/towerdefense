@@ -13,7 +13,7 @@ class Jugador extends Entidad {
     velMax = 3.4;
     controles.put("arriba", 'w'); controles.put("abajo", 's');
     controles.put("izquierda", 'a'); controles.put("derecha", 'd');
-    controles.put("torre", 'e'); controles.put("tienda", 'q');
+    controles.put("torre", 'e'); controles.put("tienda", 'q'); controles.put("barrera", 'b');
     armas.add(catalogo.get(0)); equipar(0);
   }
 
@@ -70,6 +70,7 @@ class Jugador extends Entidad {
     if (enTorre) { pos.set(torre.pos); return; }
     pos.x = constrain(pos.x, radio, width - radio); pos.y = constrain(pos.y, radio + 46, height - radio);
     if (torre != null && colision(torre)) separarDe(torre);   // la torre es un obstaculo
+    for (Barrera b : barreras) b.empujar(this);
   }
 
   void disparar() {

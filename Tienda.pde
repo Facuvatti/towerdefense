@@ -1,5 +1,5 @@
 // Tienda dentro de la torre central: solo se abre estando arriba. Pausa el juego mientras esta abierta.
-final int T_ARMA = 0, T_MUNICION = 1, T_CURA = 2, T_REPARAR = 3, T_MEJORAR = 4;
+final int T_ARMA = 0, T_MUNICION = 1, T_CURA = 2, T_REPARAR = 3, T_MEJORAR = 4, T_MADERA = 5;
 final int TORRE_NIVEL_MAX = 5;
 
 class ItemTienda {
@@ -12,6 +12,7 @@ class ItemTienda {
     if (tipo == T_MUNICION) return "Municion +30";
     if (tipo == T_CURA) return "Botiquin +50 vida";
     if (tipo == T_REPARAR) return "Reparar torre +150";
+    if (tipo == T_MADERA) return "Madera +150";
     return torre.nivel >= TORRE_NIVEL_MAX ? "Torre al maximo" : "Mejorar torre a nivel " + (torre.nivel + 1);
   }
 
@@ -20,6 +21,7 @@ class ItemTienda {
     if (tipo == T_MUNICION) return "Balas " + jugador.municion + "/" + jugador.municionMax;
     if (tipo == T_CURA) return "Vida " + jugador.vida + "/" + jugador.vidaMax;
     if (tipo == T_REPARAR) return "Torre " + torre.vida + "/" + torre.vidaMax;
+    if (tipo == T_MADERA) return "Para barreras (B). Tenes " + round(madera);
     return "+200 vida maxima y la repara 200";
   }
 
@@ -28,6 +30,7 @@ class ItemTienda {
     if (tipo == T_MUNICION) return 40;
     if (tipo == T_CURA) return 50;
     if (tipo == T_REPARAR) return 60;
+    if (tipo == T_MADERA) return 40;
     return 120 * torre.nivel;
   }
 
@@ -38,6 +41,7 @@ class ItemTienda {
     if (tipo == T_MUNICION) return jugador.municion < jugador.municionMax;
     if (tipo == T_CURA) return jugador.vida < jugador.vidaMax;
     if (tipo == T_REPARAR) return torre.vida < torre.vidaMax;
+    if (tipo == T_MADERA) return true;
     return torre.nivel < TORRE_NIVEL_MAX;
   }
 
@@ -60,13 +64,14 @@ class ItemTienda {
     else if (tipo == T_MUNICION) jugador.municion = min(jugador.municionMax, jugador.municion + 30);
     else if (tipo == T_CURA) jugador.vida = min(jugador.vidaMax, jugador.vida + 50);
     else if (tipo == T_REPARAR) torre.vida = min(torre.vidaMax, torre.vida + 150);
+    else if (tipo == T_MADERA) madera += 150;
     else torre.mejorar();
   }
 }
 
 class Tienda {
   ArrayList<ItemTienda> items = new ArrayList<ItemTienda>();
-  float px = 180, py = 90, pw = 600, alto = 46;   // panel y alto de cada fila
+  float px = 180, py = 80, pw = 600, alto = 42;   // panel y alto de cada fila
   String mensaje = ""; int mensajeT = 0;
 
   Tienda() {
@@ -75,6 +80,7 @@ class Tienda {
     items.add(new ItemTienda(T_MUNICION, null));
     items.add(new ItemTienda(T_CURA, null));
     items.add(new ItemTienda(T_REPARAR, null));
+    items.add(new ItemTienda(T_MADERA, null));
     items.add(new ItemTienda(T_MEJORAR, null));
   }
 
