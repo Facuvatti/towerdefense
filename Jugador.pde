@@ -68,9 +68,10 @@ class Jugador extends Entidad {
     apuntado.normalize();
     super.actualizar();
     if (enTorre) { pos.set(torre.pos); return; }
-    pos.x = constrain(pos.x, radio, width - radio); pos.y = constrain(pos.y, radio + 46, height - radio);
-    if (torre != null && colision(torre)) separarDe(torre);   // la torre es un obstaculo
-    for (Barrera b : barreras) b.empujar(this);
+    for (Barrera b : barreras) b.empujar(this);                // obstaculos: barreras, torre y torretas
+    if (torre != null && colision(torre)) separarDe(torre);
+    for (Torre t : torres) if (colision(t)) separarDe(t);
+    pos.x = constrain(pos.x, radio, width - radio); pos.y = constrain(pos.y, radio + 46, height - radio);   // el borde va ultimo
   }
 
   void disparar() {

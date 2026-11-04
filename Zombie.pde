@@ -11,7 +11,7 @@ final int[]   Z_BOTIN   = {10, 15, 40, 150};
 
 class Zombie extends Entidad {
   int tipo, puntos, botin;
-  float acel, fase = random(TWO_PI), lado = random(1) < 0.5 ? -1 : 1;   // lado: hacia donde rodea las barreras
+  float acel, fase = random(TWO_PI);
   color cuerpo;
 
   Zombie(float x, float y, int tipo) {
@@ -35,33 +35,35 @@ class Zombie extends Entidad {
 
   void actualizar() {
     Entidad obj = objetivo();
-    PVector d = PVector.sub(obj.pos, pos);
-    angulo = d.heading();
-    PVector deseo = d.copy().normalize();
-    acc.add(d.setMag(acel));
+    PVector deseo = PVector.sub(obj.pos, pos).normalize();
+    boolean rompe = tipo == JEFE;   // el jefe va derecho y rompe lo que se le cruce
+    if (!rompe) { PVector c = direccionCampo(pos); if (c != null) deseo = c; }   // rodea las barreras por el campo de flujo
+    acc.add(PVector.mult(deseo, acel));
     for (Zombie o : zombies) if (o != this) {   // separacion entre zombies
       PVector e = PVector.sub(pos, o.pos); float m = e.mag();
       if (m > 0 && m < radio + o.radio) acc.add(e.setMag(0.25));
     }
     super.actualizar();
-    if (torre != null && obj != torre && colision(torre)) separarDe(torre);   // la rodean, no la atraviesan
+    if (vel.magSq() > 0.04) angulo = vel.heading();
     for (Barrera b : barreras) {
       if (!b.empujar(this)) continue;
-      if (tipo == JEFE) {   // el jefe no entra por los huecos: rompe la barrera a golpes
-        if (puedeAtacar()) { ultimoAtaque = millis(); b.herir(dano); astillas(b.puntoCercano(pos)); shake += 2; }
-      } else {              // los demas la rodean: se deslizan a lo largo del muro
-        PVector t = b.tangente.copy(); float dt = t.dot(deseo);
-        if (abs(dt) < 0.2) t.mult(lado); else if (dt < 0) t.mult(-1);
-        acc.add(t.mult(acel * 1.5));
+      boolean bloquea = (pos.x - b.cx) * deseo.x + (pos.y - b.cy) * deseo.y < 0;   // va contra el muro, no lo roza
+      if (rompe && bloquea && puedeAtacar()) {
+        ultimoAtaque = millis(); b.herir(dano); astillas(new PVector(b.cx, b.cy)); shake += 2;
       }
     }
-    if (colision(obj)) {
-      separarDe(obj);
-      if (puedeAtacar()) {
-        ultimoAtaque = millis(); obj.herir(dano); particulas.sangre(obj.pos, 6);
-        shake += (obj == jugador) ? 4 : 1;
-      }
-    }
+    if (!jugador.enTorre) contacto(jugador);   // pega a lo que toque (torre y torretas tambien son obstaculos)
+    if (torre != null) contacto(torre);
+    for (Torre t : torres) contacto(t);
+  }
+
+  void contacto(Entidad e) {
+    if (!colision(e)) return;
+    separarDe(e);
+    if (!puedeAtacar()) return;
+    ultimoAtaque = millis(); e.herir(dano);
+    if (e == jugador) { particulas.sangre(e.pos, 6); shake += 4; }
+    else { particulas.emitir(pos, 5, color(120, 115, 105), 0.5, 2.5, 4, 20, 0, PI); shake += 1; }
   }
 
   void mostrar() {

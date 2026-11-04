@@ -226,7 +226,7 @@ La munición y la cura solo se recogen si al jugador le faltan, y salen con más
 
 #### Funciones (`Drop.pde`)
 
-- `soltarDrops(Zombie z)`: reparte el botín en 1 a 3 monedas y tira al azar munición, cura y material.
+- `soltarDrops(Zombie z)`: reparte el botín en monedas (1 a 2, 3 los tanques, 5 los jefes) y tira al azar munición, cura y material (los jefes sueltan 3 materiales seguros).
 - `recoger(Drop d)`: aplica el efecto del drop al jugador.
 
 ### Barrera (`Barrera.pde`)
@@ -236,7 +236,8 @@ Muro dibujado a mano con el mouse. Es una polilínea (`ArrayList<PVector>`) con 
 - **Madera:** cada píxel dibujado gasta madera. Se empieza con 300 y se compra más en la tienda (+150 por $40).
 - **Largo máximo:** cada pedazo mide como mucho 130 px. Al llegar al límite el trazo se corta y hay que soltar el mouse para empezar otro.
 - **Hueco obligatorio:** entre una barrera y otra (y entre una barrera y la torre) tiene que quedar al menos 32 px. Así nunca se puede cerrar la torre: los zombies comunes (y los tanques, de 30 px) pasan por los huecos. Si el trazo se acerca demasiado a otra barrera, se corta ahí. En modo construcción las zonas prohibidas se ven en rojo.
-- **Zombies:** chocan con las barreras y las rodean deslizándose a lo largo del muro. Las balas pasan por encima.
+- **Zombies:** chocan con las barreras y las rodean siguiendo un campo de flujo (ver `Camino.pde`). Las balas pasan por encima.
+- **Sin encierros:** el hueco también se exige contra el propio trazo (no se puede cerrar sobre sí mismo), contra los bordes del mapa, la torre y las torretas.
 - **Jefes:** son más anchos que el hueco, así que no pasan: golpean la barrera hasta romperla. La barrera muestra su deterioro y una barra de vida.
 
 #### Metodos
@@ -249,6 +250,14 @@ Muro dibujado a mano con el mouse. Es una polilínea (`ArrayList<PVector>`) con 
 
 - `construirBarrera()`: mientras se arrastra el mouse, avanza de a 8 px validando cada punto (largo, madera y huecos).
 - `motivoInvalido(p, propia)`: por qué no se puede poner un punto ahí (o `null`).
+
+### Camino (`Camino.pde`)
+
+Campo de flujo: una grilla de celdas de 8 px donde cada celda guarda cuántos pasos faltan hasta el objetivo más cercano (jugador, torre o torretas), calculado con un BFS desde los objetivos. Las celdas pegadas a una barrera quedan bloqueadas. Cada zombie se mueve hacia la celda vecina más cercana al objetivo, así rodea las barreras y sale de formas en U. Si no hay barreras, van derecho. Los jefes no lo usan: van derecho y rompen la barrera que les bloquee el paso.
+
+### Torretas (`Torre.pde`)
+
+Se compran con click derecho ($100). Tiene que haber al menos 90 px entre torretas, y no se pueden poner pegadas a la torre ni a una barrera. El jugador y los zombies chocan con ellas. Se deterioran con el tiempo (1 de vida cada 40 frames, unos 100 segundos) además del daño de los zombies, y se ven cada vez más gastadas.
 
 ### Jefe
 

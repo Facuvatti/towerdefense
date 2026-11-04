@@ -1,7 +1,6 @@
 // TOWER DEFENSE ZOMBIES - Facundo Vattino & Santiago Villarroel
 // Main: estados, bucle, colisiones globales, HUD y menu.
 final int MENU = 0, JUEGO = 1, PAUSA = 2, FIN = 3, TIENDA = 4;
-final int COSTO_TORRE = 100;
 final int CENTRO_Y = 343;   // centro del area jugable (debajo del HUD)
 int estado = MENU;
 Jugador jugador;
@@ -24,6 +23,7 @@ String[] acciones = {"arriba", "abajo", "izquierda", "derecha", "torre", "tienda
 void setup() {
   size(960, 640);
   noSmooth();
+  iniciarCampo();
   textFont(createFont("Monospaced.bold", 16));
   crearFondo();
   crearCatalogo();
@@ -35,6 +35,7 @@ void setup() {
 void nuevaPartida() {
   zombies.clear(); balas.clear(); torres.clear(); drops.clear(); barreras.clear(); particulas.lista.clear();
   trazoActual = null; modoBarrera = false; esperarSoltar = false; madera = 300; oleadaConJefe = false;
+  iniciarCampo();
   crearFondo();
   torre = new TorreCentral(width/2, CENTRO_Y);
   jugador.reiniciar(width/2, CENTRO_Y + 70);
@@ -56,6 +57,8 @@ void actualizarJuego() {
   jugador.actualizar();
   if (modoBarrera) construirBarrera();   // en modo construccion el click dibuja en vez de disparar
   else if (mousePressed && mouseButton == LEFT) jugador.disparar();
+  for (Barrera b : barreras) b.actualizar();   // descuenta el flash de golpe
+  actualizarCampo();
   for (Zombie z : zombies) z.actualizar();
   for (Bala b : balas) b.actualizar();
   for (Torre t : torres) t.actualizar();
@@ -82,7 +85,7 @@ void actualizarJuego() {
     if (b.murio()) {
       for (int k = 0; k < b.puntos.size(); k += 2) astillas(b.puntos.get(k));
       if (b == trazoActual) trazoActual = null;
-      barreras.remove(i);
+      barreras.remove(i); campoSucio = true;
     }
   }
   for (int i = drops.size()-1; i >= 0; i--) {   // recoleccion al pasar por arriba
@@ -149,11 +152,15 @@ void dibujarJuego() {
 }
 
 void previsualizarTorre() {
-  boolean ok = monedas >= COSTO_TORRE;
-  noFill(); stroke(ok ? color(120, 255, 140, 90) : color(255, 80, 80, 90));
+  String err = motivoTorreta(mouseX, mouseY);
+  boolean ok = err == null;
+  noFill(); stroke(255, 80, 80, 40);   // zona donde no entra otra torreta
+  for (Torre t : torres) ellipse(t.pos.x, t.pos.y, 2 * DIST_TORRETAS, 2 * DIST_TORRETAS);
+  stroke(ok ? color(120, 255, 140, 90) : color(255, 80, 80, 90));
   ellipse(mouseX, mouseY, 440, 440);
   noStroke(); fill(ok ? color(120, 255, 140, 120) : color(255, 80, 80, 120));
   rect(mouseX, mouseY, 28, 28);
+  if (!ok && !err.equals("Falta plata")) texto(err, mouseX, mouseY - 26, 12, color(255, 120, 100), CENTER);
 }
 
 void indicadorTorre() {   // aviso de la tecla para subir/bajar
@@ -161,9 +168,9 @@ void indicadorTorre() {   // aviso de la tecla para subir/bajar
   String tecla = str(Character.toUpperCase(jugador.controles.get("torre")));
   if (jugador.enTorre)
     texto(tecla + ": bajar   " + Character.toUpperCase(jugador.controles.get("tienda")) + ": tienda",
-          jugador.pos.x, jugador.pos.y + 50, 12, color(255, 230), CENTER);
+          jugador.pos.x, jugador.pos.y + torre.radio + 16, 12, color(255, 230), CENTER);
   else if (jugador.cercaDeTorre())
-    texto(tecla + ": subir", torre.pos.x, torre.pos.y + 52, 12,
+    texto(tecla + ": subir", torre.pos.x, torre.pos.y + torre.radio + 18, 12,
           jugador.puedeCambiarTorre() ? color(255, 230) : color(160, 160), CENTER);
 }
 
@@ -182,7 +189,8 @@ void dibujarHUD() {
   texto("$ " + monedas, 580, 23, 18, color(110, 240, 130), LEFT);
   texto("MAT " + materiales, 670, 23, 18, color(150, 200, 230), LEFT);
   texto("PUNTOS " + puntaje, width - 16, 23, 18, color(255), RIGHT);
-  texto("WASD mover  |  " + Character.toUpperCase(jugador.controles.get("torre")) + " subir/bajar torre  |  Click izq. disparar  |  Click der. torreta ($" + COSTO_TORRE + ")  |  P pausa",
+  texto("WASD mover  |  " + Character.toUpperCase(jugador.controles.get("torre")) + " subir/bajar torre  |  "
+        + (modoBarrera ? "Click izq. arrastrar: dibujar barrera" : "Click izq. disparar  |  Click der. torreta ($" + COSTO_TORRE + ")") + "  |  P pausa",
         width/2, height - 16, 12, color(210, 210, 210, 200), CENTER);
   String b = str(Character.toUpperCase(jugador.controles.get("barrera")));
   texto("ARMA: " + jugador.arma.nombre + (jugador.armas.size() > 1 ? "  [1-" + jugador.armas.size() + "]" : "")
@@ -257,9 +265,7 @@ void crearFondo() {
 void mousePressed() {
   if (estado == MENU) { if (remapIdx < 0 && abs(mouseX - width/2) < 130 && abs(mouseY - 380) < 27) nuevaPartida(); return; }
   if (estado == TIENDA) { if (mouseButton == LEFT) tienda.click(); return; }
-  if (estado == JUEGO && !modoBarrera && mouseButton == RIGHT && monedas >= COSTO_TORRE
-      && dist(mouseX, mouseY, jugador.pos.x, jugador.pos.y) > 30
-      && (torre == null || dist(mouseX, mouseY, torre.pos.x, torre.pos.y) > torre.radio + 20)) {
+  if (estado == JUEGO && !modoBarrera && mouseButton == RIGHT && motivoTorreta(mouseX, mouseY) == null) {
     monedas -= COSTO_TORRE; torres.add(new Torre(mouseX, mouseY));
   }
 }

@@ -4,7 +4,7 @@ class TorreCentral extends Entidad {
   int nivel = 1;
   color[] banderas = {color(200, 60, 60), color(60, 110, 200), color(230, 200, 60), color(120, 200, 90)};
 
-  TorreCentral(float x, float y) { super(x, y, 34, 600, 0, 0); }
+  TorreCentral(float x, float y) { super(x, y, 42, 600, 0, 0); }
 
   void mover() {}   // estructura fija: no se mueve
 
@@ -17,6 +17,7 @@ class TorreCentral extends Entidad {
     float d = 1 - vida / (float) vidaMax;   // deterioro de 0 (nueva) a 1 (destruida)
     color piedra = lerpColor(color(124, 116, 104), color(62, 54, 48), d);
     pushMatrix(); translate(pos.x, pos.y); noStroke();
+    scale(radio / 34.0);   // el dibujo esta hecho para radio 34
     fill(0, 80); rect(5, 7, 66, 66);
     fill(flash > 0 ? color(255) : piedra); rect(0, 0, 62, 62);
     fill(lerpColor(piedra, color(0), 0.3));   // almenas

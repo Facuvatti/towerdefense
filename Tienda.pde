@@ -21,7 +21,7 @@ class ItemTienda {
     if (tipo == T_MUNICION) return "Balas " + jugador.municion + "/" + jugador.municionMax;
     if (tipo == T_CURA) return "Vida " + jugador.vida + "/" + jugador.vidaMax;
     if (tipo == T_REPARAR) return "Torre " + torre.vida + "/" + torre.vidaMax;
-    if (tipo == T_MADERA) return "Para barreras (B). Tenes " + round(madera);
+    if (tipo == T_MADERA) return "Para barreras (" + Character.toUpperCase(jugador.controles.get("barrera")) + "). Tenes " + round(madera);
     return "+200 vida maxima y la repara 200";
   }
 
