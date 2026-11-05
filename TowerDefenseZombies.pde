@@ -386,7 +386,10 @@ void keyPressed() {
     if(estado==JUEGO && jugador.enTorre) { estado=TIENDA; tienda.mensajeT=0; baseDatos.guardarPartida(false); }
     else if(estado==TIENDA) { estado=JUEGO; baseDatos.guardarPartida(false); }
   }
-  if((estado==JUEGO || estado==TIENDA) && k>='1' && k<='9') jugador.equipar(k-'1');
+  if((estado==JUEGO || estado==TIENDA) && k>='1' && k<='9') {
+    jugador.equipar(k-'1');
+    if(estado==TIENDA) baseDatos.guardarPartida(false);
+  }
   if(estado==JUEGO && k==jugador.controles.get("barrera") && nueva) { modoBarrera=!modoBarrera; terminarTrazo(); esperarSoltar=mousePressed; }
   teclas.put(k,true);
 }
