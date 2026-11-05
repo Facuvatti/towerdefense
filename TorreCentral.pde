@@ -4,7 +4,8 @@ class TorreCentral extends Entidad {
   int nivel = 1;
   color[] banderas = {color(200, 60, 60), color(60, 110, 200), color(230, 200, 60), color(120, 200, 90)};
 
-  TorreCentral(float x, float y) { super(x, y, 42, 600, 0, 0); }
+  // Radio mayor para una torre central mas imponente; colisiones e interaccion usan el mismo tamaño.
+  TorreCentral(float x, float y) { super(x, y, 58, 600, 0, 0); }
 
   void mover() {}   // estructura fija: no se mueve
 
