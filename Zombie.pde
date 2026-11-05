@@ -13,6 +13,8 @@ class Zombie extends Entidad {
   int tipo, puntos, botin;
   float acel, fase = random(TWO_PI);
   color cuerpo;
+  JSONObject definicion = null;
+  String creacionId = "";
 
   Zombie(float x, float y, int tipo) {
     super(x, y, Z_RADIO[tipo], Z_VIDA[tipo], Z_DANO[tipo], Z_COOLDOWN[tipo]);
@@ -23,6 +25,15 @@ class Zombie extends Entidad {
     puntos = Z_PUNTOS[tipo]; botin = Z_BOTIN[tipo];
     color[] cuerpos = {color(98, 142, 86), color(150, 128, 76), color(74, 104, 98), color(120, 56, 78)};
     cuerpo = cuerpos[tipo];
+  }
+
+  Zombie(float x, float y, JSONObject def) {
+    super(x, y, 12, def.getInt("vida", 55), def.getInt("dano", 9), def.getInt("cadencia", 800));
+    definicion = def; creacionId = def.getString("id", ""); tipo = 0;
+    vida = vidaMax = def.getInt("vida", 55);
+    velMax = def.getFloat("velocidad", 1.0); acel = velMax * 0.2;
+    puntos = max(10, vidaMax/2); botin = max(10, vidaMax/3);
+    cuerpo = def.getInt("tinte", color(130,205,115));
   }
 
   Entidad objetivo() {
@@ -71,6 +82,16 @@ class Zombie extends Entidad {
     pushMatrix(); translate(pos.x, pos.y);
     noStroke(); fill(0, 60); ellipse(0, 4, s*2.2, s*1.4);
     rotate(angulo);
+    if (definicion != null) {
+      fill(lerpColor(cuerpo, color(0), 0.35));
+      ellipse(0, 0, s*2.0, s*2.0);
+      fill(flash > 0 ? color(255) : cuerpo);
+      ellipse(0, 0, s*1.65, s*1.65);
+      dibujarTrazos(definicion.getJSONArray("trazos"), -s, -s, s*2, s*2,
+        definicion.getInt("tinte", color(130,205,115)));
+      fill(225,40,40); ellipse(s*0.35,-s*0.2,3,3); ellipse(s*0.35,s*0.2,3,3);
+      popMatrix(); barraVida(); return;
+    }
     color c = flash > 0 ? color(255) : cuerpo;
     fill(lerpColor(c, color(0), 0.35));
     rect(s*0.9, -s*0.7 + bob, s*1.1, s*0.5); rect(s*0.9, s*0.7 - bob, s*1.1, s*0.5);

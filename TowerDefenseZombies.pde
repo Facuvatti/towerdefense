@@ -1,6 +1,6 @@
 // TOWER DEFENSE ZOMBIES - Facundo Vattino & Santiago Villarroel
 // Main: estados, bucle, colisiones globales, HUD y menu.
-final int MENU = 0, JUEGO = 1, PAUSA = 2, FIN = 3, TIENDA = 4;
+final int MENU = 0, JUEGO = 1, PAUSA = 2, FIN = 3, TIENDA = 4, IDENTIDAD = 5, SELECCION = 6, EDITOR = 7;
 final int CENTRO_Y = 343;   // centro del area jugable (debajo del HUD)
 int estado = MENU;
 Jugador jugador;
@@ -19,10 +19,15 @@ PGraphics fondo;
 int oleada = 0, monedas = 0, materiales = 0, puntaje = 0, cuentaAtras = 0, bannerT = 0, avisoT = 0, remapIdx = -1;
 float shake = 0;
 String[] acciones = {"arriba", "abajo", "izquierda", "derecha", "torre", "tienda", "barrera"};
+BaseDatos baseDatos = new BaseDatos();
+String entradaJugador = "";
+ArrayList<JSONObject> partidasDisponibles = new ArrayList<JSONObject>();
+int partidaSeleccionada = 0;
 
 void setup() {
   size(960, 640);
   noSmooth();
+  baseDatos.cargar();
   iniciarCampo();
   textFont(createFont("Monospaced.bold", 16));
   crearFondo();
@@ -39,13 +44,18 @@ void nuevaPartida() {
   crearFondo();
   torre = new TorreCentral(width/2, CENTRO_Y);
   jugador.reiniciar(width/2, CENTRO_Y + 70);
+  baseDatos.agregarArmasCreadas();
   oleada = 0; puntaje = 0; monedas = 150; materiales = 0; cuentaAtras = 200; bannerT = 0; avisoT = 0;
   estado = JUEGO;
+  baseDatos.crearNuevaPartida();
 }
 
 void draw() {
   background(0);
   if (estado == MENU) { dibujarMenu(); return; }
+  if (estado == IDENTIDAD) { dibujarIdentidad(); return; }
+  if (estado == SELECCION) { dibujarSelectorPartidas(); return; }
+  if (estado == EDITOR) { dibujarEditor(); return; }
   if (estado == JUEGO) actualizarJuego();
   dibujarJuego();
   if (estado == PAUSA) overlay("PAUSA", "P para continuar");
@@ -103,7 +113,8 @@ void actualizarJuego() {
     torre = null;
   }
   particulas.actualizar();
-  if (jugador.murio()) { estado = FIN; particulas.explosion(jugador.pos); shake = 12; }
+  if (jugador.murio() && estado != FIN) { estado = FIN; particulas.explosion(jugador.pos); shake = 12; baseDatos.guardarPartida(true); }
+  if (estado == JUEGO && frameCount % 120 == 0) baseDatos.guardarPartida(false);
 
   // Flujo de oleadas
   if (zombies.isEmpty()) {
@@ -207,22 +218,52 @@ void dibujarHUD() {
 }
 
 void dibujarMenu() {
-  rectMode(CORNER); image(fondo, 0, 0); noStroke(); fill(0, 175); rect(0, 0, width, height);
-  float p = sin(frameCount*0.06) * 5;
-  texto("TOWER DEFENSE", width/2, 130 + p, 58, color(120, 220, 90), CENTER);
-  texto("ZOMBIES", width/2, 205 - p, 74, color(220, 60, 60), CENTER);
-  texto("Facundo Vattino & Santiago Villarroel", width/2, 262, 14, color(190), CENTER);
-  boolean hover = abs(mouseX - width/2) < 130 && abs(mouseY - 380) < 27;
-  rectMode(CENTER); fill(hover ? color(90, 190, 80) : color(50, 120, 55)); stroke(20); strokeWeight(3);
-  rect(width/2, 380, 260, 54); noStroke();
-  texto("JUGAR", width/2, 380, 26, color(255), CENTER);
-  String c = "";
-  for (String a : acciones) c += a.toUpperCase() + ": " + Character.toUpperCase(jugador.controles.get(a)) + "   ";
-  texto(c, width/2, 470, 14, color(230), CENTER);
-  texto(remapIdx >= 0 ? ">> Presiona la tecla para " + acciones[remapIdx].toUpperCase() + " <<" : "R: reasignar controles   |   ENTER: jugar",
-        width/2, 500, 14, remapIdx >= 0 ? color(255, 220, 80) : color(170), CENTER);
+  rectMode(CORNER); image(fondo,0,0); noStroke(); fill(0,175); rect(0,0,width,height);
+  float p=sin(frameCount*0.06)*5;
+  texto("TOWER DEFENSE",width/2,115+p,58,color(120,220,90),CENTER);
+  texto("ZOMBIES",width/2,190-p,74,color(220,60,60),CENTER);
+  texto("Facundo Vattino & Santiago Villarroel",width/2,245,14,color(190),CENTER);
+  boolean hJ=abs(mouseX-width/2)<130 && abs(mouseY-345)<27;
+  rectMode(CENTER); fill(hJ?color(90,190,80):color(50,120,55)); stroke(20); strokeWeight(3);
+  rect(width/2,345,260,54); noStroke(); texto("JUGAR",width/2,345,26,color(255),CENTER);
+  boolean hE=abs(mouseX-width/2)<145 && abs(mouseY-420)<27;
+  fill(hE?color(190,130,55):color(115,85,42)); stroke(20); rect(width/2,420,290,48); noStroke();
+  texto("CREAR ARMAS / ZOMBIS",width/2,420,17,color(255),CENTER);
+  String c="";
+  for(String accion:acciones) c+=accion.toUpperCase()+": "+Character.toUpperCase(jugador.controles.get(accion))+"   ";
+  texto(c,width/2,500,13,color(230),CENTER);
+  texto(remapIdx>=0?"Presiona la tecla para "+acciones[remapIdx].toUpperCase():"R: reasignar controles | ENTER: jugar | E: editor",
+    width/2,530,14,remapIdx>=0?color(255,220,80):color(170),CENTER);
 }
 
+void dibujarIdentidad() {
+  background(13,20,18);
+  texto("¿QUIÉN ESTÁ JUGANDO?",width/2,190,38,color(150,220,120),CENTER);
+  texto("Escribí tu nombre y presioná ENTER",width/2,260,19,color(220),CENTER);
+  rectMode(CENTER); stroke(130,170,120); fill(30,45,35); rect(width/2,335,420,58); noStroke();
+  texto(entradaJugador+"_",width/2,335,25,color(255),CENTER);
+  texto("Las partidas y puntajes quedan asociados a este jugador.",width/2,410,15,color(170),CENTER);
+  texto("ESC: volver al menú",width/2,500,14,color(150),CENTER);
+}
+
+void dibujarSelectorPartidas() {
+  background(13,20,18);
+  texto("HOLA, "+baseDatos.jugadorActual.toUpperCase(),width/2,90,30,color(150,220,120),CENTER);
+  texto("PARTIDAS GUARDADAS",width/2,145,22,color(235),CENTER);
+  if(partidasDisponibles.size()==0) texto("No tenés partidas pendientes.",width/2,240,19,color(190),CENTER);
+  else {
+    int primero=max(0,min(partidaSeleccionada-3,partidasDisponibles.size()-6));
+    int ultimo=min(partidasDisponibles.size(),primero+6);
+    for(int i=primero;i<ultimo;i++) {
+      JSONObject p=partidasDisponibles.get(i); float y=205+(i-primero)*50;
+      fill(i==partidaSeleccionada?color(70,110,65):color(35,48,40));
+      rectMode(CENTER); rect(width/2,y,660,42);
+      texto((i+1)+". Oleada "+p.getInt("oleada",0)+" | Puntaje "+p.getInt("puntaje",0)+
+        " | $"+p.getInt("monedas",0)+" | "+p.getString("actualizada",""),width/2,y,13,color(255),CENTER);
+    }
+  }
+  texto("↑ / ↓ elegir | ENTER reanudar | N nueva partida | ESC menú",width/2,555,14,color(210),CENTER);
+}
 void overlay(String t, String s) {
   rectMode(CORNER); noStroke(); fill(0, 160); rect(0, 0, width, height);
   texto(t, width/2, height/2 - 30, 60, color(230, 70, 60), CENTER);
@@ -263,37 +304,96 @@ void crearFondo() {
 }
 
 void mousePressed() {
-  if (estado == MENU) { if (remapIdx < 0 && abs(mouseX - width/2) < 130 && abs(mouseY - 380) < 27) nuevaPartida(); return; }
-  if (estado == TIENDA) { if (mouseButton == LEFT) tienda.click(); return; }
-  if (estado == JUEGO && !modoBarrera && mouseButton == RIGHT && motivoTorreta(mouseX, mouseY) == null) {
-    monedas -= COSTO_TORRE; torres.add(new Torre(mouseX, mouseY));
-  }
-}
-
-void keyPressed() {
-  if (key == CODED) return;
-  char k = Character.toLowerCase(key);
-  boolean enter = (key == ENTER || key == RETURN);
-  if (estado == MENU) {
-    if (remapIdx >= 0 && !enter) { jugador.controles.put(acciones[remapIdx], k); remapIdx = (remapIdx + 1 >= acciones.length) ? -1 : remapIdx + 1; }
-    else if (k == 'r') remapIdx = 0;
-    else if (enter) nuevaPartida();
+  if(estado==MENU) {
+    if(remapIdx<0 && abs(mouseX-width/2)<130 && abs(mouseY-345)<27) {
+      entradaJugador=baseDatos.jugadorActual; estado=IDENTIDAD;
+    } else if(abs(mouseX-width/2)<145 && abs(mouseY-420)<27) { tipoCreacion="ARMA"; abrirEditor(); }
     return;
   }
-  if (k == 'p' && estado == JUEGO) estado = PAUSA; else if (k == 'p' && estado == PAUSA) estado = JUEGO;
-  if (estado == FIN && enter) nuevaPartida();
-  Boolean yaApretada = teclas.get(k);   // solo al apretar, no mientras se mantiene
-  boolean nueva = yaApretada == null || !yaApretada;
-  if (estado == JUEGO && k == jugador.controles.get("torre") && nueva) jugador.alternarTorre();
-  if (k == jugador.controles.get("tienda") && nueva) {   // la tienda esta dentro de la torre
-    if (estado == JUEGO && jugador.enTorre) { estado = TIENDA; tienda.mensajeT = 0; }
-    else if (estado == TIENDA) estado = JUEGO;
+  if(estado==EDITOR) {
+    if(mouseX>=EDITOR_X && mouseX<=EDITOR_X+EDITOR_W && mouseY>=EDITOR_Y && mouseY<=EDITOR_Y+EDITOR_H) {
+      trazoActualEditor=new ArrayList<PVector>(); trazoActualEditor.add(new PVector(mouseX,mouseY)); trazosEditor.add(trazoActualEditor);
+    }
+    return;
   }
-  if (estado == JUEGO && k >= '1' && k <= '9') jugador.equipar(k - '1');
-  if (estado == JUEGO && k == jugador.controles.get("barrera") && nueva) {   // modo construccion de barreras
-    modoBarrera = !modoBarrera; terminarTrazo(); esperarSoltar = mousePressed;
+  if(estado==TIENDA) { if(mouseButton==LEFT) { tienda.click(); baseDatos.guardarPartida(false); } return; }
+  if(estado==JUEGO && !modoBarrera && mouseButton==RIGHT && motivoTorreta(mouseX,mouseY)==null) {
+    monedas-=COSTO_TORRE; torres.add(new Torre(mouseX,mouseY));
   }
-  teclas.put(k, true);
 }
-
+void mouseDragged() {
+  if(estado==EDITOR && trazoActualEditor!=null && mouseX>=EDITOR_X && mouseX<=EDITOR_X+EDITOR_W &&
+      mouseY>=EDITOR_Y && mouseY<=EDITOR_Y+EDITOR_H) {
+    if(dist(mouseX,mouseY,trazoActualEditor.get(trazoActualEditor.size()-1).x,
+      trazoActualEditor.get(trazoActualEditor.size()-1).y)>2) trazoActualEditor.add(new PVector(mouseX,mouseY));
+  }
+}
+void mouseReleased() { if(estado==EDITOR) trazoActualEditor=null; }
+void keyPressed() {
+  boolean enter=(key==ENTER || key==RETURN); char k=Character.toLowerCase(key);
+  if(estado==EDITOR) {
+    if(key==CODED) {
+      if(keyCode==UP) atributosCreacion[atributoSeleccionado]+=(tipoCreacion.equals("ARMA") && atributoSeleccionado==3)?-10:1;
+      if(keyCode==DOWN) atributosCreacion[atributoSeleccionado]-=(tipoCreacion.equals("ARMA") && atributoSeleccionado==3)?-10:1;
+      atributosCreacion[atributoSeleccionado]=max(1,atributosCreacion[atributoSeleccionado]); return;
+    }
+    if(key==ESC) { key=0; estado=MENU; return; }
+    if(key==TAB) { tipoCreacion=tipoCreacion.equals("ARMA")?"ZOMBIE":"ARMA"; abrirEditor(); return; }
+    if(key==DELETE) { trazosEditor.clear(); trazoActualEditor=null; return; }
+    if(enter) { guardarCreacionActual(); return; }
+    if(key>='1' && key<='4') { atributoSeleccionado=key-'1'; return; }
+    if(key==BACKSPACE) { if(nombreCreacion.length()>0) nombreCreacion=nombreCreacion.substring(0,nombreCreacion.length()-1); }
+    else if(key>=32 && key<=126 && nombreCreacion.length()<24) nombreCreacion+=key;
+    return;
+  }
+  if(estado==IDENTIDAD) {
+    if(key==ESC) { key=0; estado=MENU; return; }
+    if(key==BACKSPACE) { if(entradaJugador.length()>0) entradaJugador=entradaJugador.substring(0,entradaJugador.length()-1); }
+    else if(enter) {
+      if(entradaJugador.trim().length()>0) {
+        baseDatos.registrarJugador(entradaJugador); partidasDisponibles=baseDatos.partidasActivas(baseDatos.jugadorActual);
+        partidaSeleccionada=0; if(partidasDisponibles.size()>0) estado=SELECCION; else nuevaPartida();
+      }
+    } else if(key>=32 && key<=126 && entradaJugador.length()<22) entradaJugador+=key;
+    return;
+  }
+  if(estado==SELECCION) {
+    if(key==CODED) {
+      if(keyCode==UP && partidasDisponibles.size()>0) partidaSeleccionada=max(0,partidaSeleccionada-1);
+      if(keyCode==DOWN && partidasDisponibles.size()>0) partidaSeleccionada=min(partidasDisponibles.size()-1,partidaSeleccionada+1);
+      return;
+    }
+    if(key==ESC) { key=0; estado=MENU; return; }
+    if(k=='n') { nuevaPartida(); return; }
+    if(enter && partidasDisponibles.size()>0) { baseDatos.reanudarPartida(partidasDisponibles.get(partidaSeleccionada)); return; }
+    return;
+  }
+  if(key==CODED) return;
+  if(estado==MENU) {
+    if(remapIdx>=0 && !enter) {
+      jugador.controles.put(acciones[remapIdx],k); remapIdx=(remapIdx+1>=acciones.length)?-1:remapIdx+1;
+    } else if(k=='r') remapIdx=0;
+    else if(k=='e') { tipoCreacion="ARMA"; abrirEditor(); }
+    else if(enter) { entradaJugador=baseDatos.jugadorActual; estado=IDENTIDAD; }
+    return;
+  }
+  if(k=='p' && estado==JUEGO) { estado=PAUSA; baseDatos.guardarPartida(false); }
+  else if(k=='p' && estado==PAUSA) estado=JUEGO;
+  if(estado==FIN && enter) { estado=MENU; baseDatos.partidaActualId=""; return; }
+  Boolean yaApretada=teclas.get(k); boolean nueva=yaApretada==null || !yaApretada;
+  if(estado==JUEGO && k==jugador.controles.get("torre") && nueva) jugador.alternarTorre();
+  if(k==jugador.controles.get("tienda") && nueva) {
+    if(estado==JUEGO && jugador.enTorre) { estado=TIENDA; tienda.mensajeT=0; baseDatos.guardarPartida(false); }
+    else if(estado==TIENDA) { estado=JUEGO; baseDatos.guardarPartida(false); }
+  }
+  if((estado==JUEGO || estado==TIENDA) && k>='1' && k<='9') jugador.equipar(k-'1');
+  if(estado==JUEGO && k==jugador.controles.get("barrera") && nueva) { modoBarrera=!modoBarrera; terminarTrazo(); esperarSoltar=mousePressed; }
+  teclas.put(k,true);
+}
 void keyReleased() { if (key != CODED) teclas.put(Character.toLowerCase(key), false); }
+
+
+void exit() {
+  if(baseDatos!=null && (estado==JUEGO || estado==PAUSA || estado==TIENDA)) baseDatos.guardarPartida(false);
+  super.exit();
+}

@@ -4,12 +4,22 @@ class Arma {
   int dano, cooldown, perdigones, alcance, perfora, precio;   // alcance: frames que vive la bala
   float dispersion, velocidad, retroceso, largo;
   color c;
+  String creacionId = "";
+  JSONArray trazos = null;
 
   Arma(String nombre, int precio, int dano, int cooldown, int perdigones, float dispersion,
        float velocidad, int alcance, int perfora, float retroceso, float largo, color c) {
     this.nombre = nombre; this.precio = precio; this.dano = dano; this.cooldown = cooldown;
     this.perdigones = perdigones; this.dispersion = dispersion; this.velocidad = velocidad;
     this.alcance = alcance; this.perfora = perfora; this.retroceso = retroceso; this.largo = largo; this.c = c;
+  }
+
+  Arma(JSONObject def) {
+    this(def.getString("nombre", "Arma creada"), 0, def.getInt("dano", 25),
+      def.getInt("cadencia", 140), 1, 0.05, def.getFloat("velocidad", 11),
+      def.getInt("alcance", 90), 0, 0.6, 16, def.getInt("tinte", color(255,205,95)));
+    creacionId = def.getString("id", "");
+    trazos = def.getJSONArray("trazos");
   }
 
   void disparar(PVector boca, PVector dir) {

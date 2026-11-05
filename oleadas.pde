@@ -41,7 +41,11 @@ void inicializar_enemigos(int[] lados, int[] cant) {
   for (int i = 0; i < lados.length; i++)
     for (int k = 0; k < cant[i]; k++) {
       PVector p = punto_borde(lados[i]);
-      zombies.add(new Zombie(p.x, p.y, elegir_tipo()));
+      JSONObject personalizada = baseDatos.creacionAleatoria("ZOMBIE");
+      if (personalizada != null && random(1) < 0.30)
+        zombies.add(new Zombie(p.x, p.y, personalizada));
+      else
+        zombies.add(new Zombie(p.x, p.y, elegir_tipo()));
     }
 }
 
