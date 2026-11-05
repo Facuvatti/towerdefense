@@ -98,8 +98,9 @@ class Jugador extends Entidad {
     rotate(angulo);
     color c = flash > 0 ? color(255) : color(60, 110, 200);
     fill(arma.c); rect(radio - 5 + arma.largo/2, 0, arma.largo, arma.perdigones > 1 ? 6 : 5);
-    if (arma.trazos != null)
-      dibujarTrazos(arma.trazos, radio - 5, -radio*0.45, arma.largo, radio*0.9, arma.c);
+    // El dibujo custom queda contenido en el extremo del cañon, sin tapar el cuerpo.
+    if (arma.trazos != null && arma.largo > 10)
+      dibujarTrazos(arma.trazos, radio + 3, -radio*0.32, max(6, arma.largo - 8), radio*0.64, arma.c);
     fill(230, 190, 150); rect(radio*0.8, -radio*0.75, 7, 5); rect(radio + 4, radio*0.5, 7, 5);
     fill(c); rect(0, 0, radio*1.7, radio*2.2);
     fill(lerpColor(c, color(0), 0.4)); rect(-radio*0.4, 0, radio*0.6, radio*1.6);
