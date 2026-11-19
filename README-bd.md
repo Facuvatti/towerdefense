@@ -16,7 +16,7 @@ Las tablas tienen claves primarias, claves foráneas e índices para consultar p
 
 ### Dependencia necesaria
 
-El sketch utiliza el driver JDBC de SQLite de Xerial. Descargá el archivo **sqlite-jdbc** desde [Maven Central](https://repo.maven.apache.org/maven2/org/xerial/sqlite-jdbc/) y colocá el JAR dentro de la carpeta `code/` del sketch (creala si no existe). Después reiniciá Processing.
+El sketch utiliza el driver JDBC de SQLite de Xerial. Descargá [sqlite-jdbc 3.46.1.0 (.jar)](https://repo.maven.apache.org/maven2/org/xerial/sqlite-jdbc/3.46.1.0/sqlite-jdbc-3.46.1.0.jar) y colocá el JAR dentro de la carpeta `code/` del sketch (creala si no existe). Después reiniciá Processing.
 
 Sin ese driver, Processing mostrará un error indicando que no puede cargar `org.sqlite.JDBC`.
 
