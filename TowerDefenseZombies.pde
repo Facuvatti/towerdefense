@@ -314,7 +314,7 @@ void mousePressed() {
     if(mouseX>=EDITOR_X && mouseX<=EDITOR_X+EDITOR_W && mouseY>=EDITOR_Y && mouseY<=EDITOR_Y+EDITOR_H) {
       trazoActualEditor=new ArrayList<PVector>(); trazoActualEditor.add(new PVector(mouseX,mouseY)); trazosEditor.add(trazoActualEditor);
     } else if(mouseX>=38 && mouseX<=237 && mouseY>=208 && mouseY<=456) {
-      int idx=constrain(floor((mouseY-208)/31),0,7);
+      int idx=constrain(floor((mouseY-208)/31),0,atributosCreacion.length-1);
       atributoSeleccionado=idx;
       if(mouseX>=185) modificarAtributo(idx,mouseButton==RIGHT?-1:1);
     }
@@ -345,7 +345,7 @@ void keyPressed() {
     if(key==TAB) { tipoCreacion=tipoCreacion.equals("ARMA")?"ZOMBIE":"ARMA"; abrirEditor(); return; }
     if(key==DELETE) { trazosEditor.clear(); trazoActualEditor=null; return; }
     if(enter) { guardarCreacionActual(); return; }
-    if(key>='1' && key<='8') { atributoSeleccionado=key-'1'; return; }
+    if(key>='1' && key<='8' && key-'1'<atributosCreacion.length) { atributoSeleccionado=key-'1'; return; }
     if(key==BACKSPACE) { if(nombreCreacion.length()>0) nombreCreacion=nombreCreacion.substring(0,nombreCreacion.length()-1); }
     else if(key>=32 && key<=126 && nombreCreacion.length()<24) nombreCreacion+=key;
     return;
