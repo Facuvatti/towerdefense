@@ -31,7 +31,7 @@ class Zombie extends Entidad {
     super(x, y, def.getFloat("radio", 12), def.getInt("vida", 55), def.getInt("dano", 9), def.getInt("cadencia", 800));
     definicion = def; creacionId = def.getString("id", ""); tipo = 0;
     vida = vidaMax = def.getInt("vida", 55);
-    velMax = def.getFloat("velocidad", 1.0); acel = velMax * 0.2;
+    velMax = def.getFloat("velocidad", 1.0); acel = def.getFloat("aceleracion", velMax * 0.2);
     puntos = def.getInt("puntos", max(10, vidaMax/2));
     botin = def.getInt("botin", max(10, vidaMax/3));
     cuerpo = def.getInt("tinte", color(130,205,115));
