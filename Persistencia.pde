@@ -1,33 +1,120 @@
-// Persistencia local: jugadores, partidas, puntajes y creaciones del taller.
+// Persistencia SQLite: jugadores, partidas, puntajes y creaciones.
 import java.io.File;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 
 class BaseDatos {
-  final String archivo = "data/towerdefense_db.json";
+  final String archivo = "data/towerdefense.sqlite";
+  Connection conexion;
   JSONObject datos;
   String jugadorActual = "", partidaActualId = "";
 
   void cargar() {
-    File carpeta = new File(sketchPath("data"));
-    if (!carpeta.exists()) carpeta.mkdirs();
-    datos = loadJSONObject(archivo);
-    if (datos == null) {
-      datos = new JSONObject();
-      datos.setJSONArray("jugadores", new JSONArray());
-      datos.setJSONArray("partidas", new JSONArray());
-      datos.setJSONArray("puntajes", new JSONArray());
-      datos.setJSONArray("creaciones", new JSONArray());
-      guardarArchivo();
+    try {
+      File carpeta = new File(sketchPath("data"));
+      if (!carpeta.exists()) carpeta.mkdirs();
+      Class.forName("org.sqlite.JDBC");
+      conexion = DriverManager.getConnection("jdbc:sqlite:" + sketchPath(archivo));
+      Statement st = conexion.createStatement();
+      st.execute("PRAGMA foreign_keys = ON");
+      st.execute("PRAGMA journal_mode = WAL");
+      st.execute("PRAGMA busy_timeout = 5000");
+      st.execute("CREATE TABLE IF NOT EXISTS jugadores (nombre TEXT PRIMARY KEY COLLATE NOCASE, ultima_actividad TEXT NOT NULL)");
+      st.execute("CREATE TABLE IF NOT EXISTS partidas (id TEXT PRIMARY KEY, jugador TEXT NOT NULL COLLATE NOCASE, estado TEXT NOT NULL, actualizada TEXT NOT NULL, oleada INTEGER NOT NULL, puntaje INTEGER NOT NULL, snapshot TEXT NOT NULL, FOREIGN KEY(jugador) REFERENCES jugadores(nombre))");
+      st.execute("CREATE INDEX IF NOT EXISTS idx_partidas_jugador_estado ON partidas(jugador, estado)");
+      st.execute("CREATE TABLE IF NOT EXISTS puntajes (id INTEGER PRIMARY KEY AUTOINCREMENT, partida_id TEXT NOT NULL UNIQUE, jugador TEXT NOT NULL COLLATE NOCASE, puntaje INTEGER NOT NULL, oleada INTEGER NOT NULL, fecha TEXT NOT NULL, FOREIGN KEY(partida_id) REFERENCES partidas(id) ON DELETE CASCADE)");
+      st.execute("CREATE INDEX IF NOT EXISTS idx_puntajes_ranking ON puntajes(puntaje DESC)");
+      st.execute("CREATE TABLE IF NOT EXISTS creaciones (id TEXT PRIMARY KEY, tipo TEXT NOT NULL, nombre TEXT NOT NULL, definicion TEXT NOT NULL)");
+      st.execute("CREATE INDEX IF NOT EXISTS idx_creaciones_tipo ON creaciones(tipo)");
+      st.close();
+      cargarCache();
+    } catch(Exception e) {
+      throw new RuntimeException("No se pudo abrir la base SQLite: " + e.getMessage(), e);
     }
-    if (!datos.hasKey("jugadores")) datos.setJSONArray("jugadores", new JSONArray());
-    if (!datos.hasKey("partidas")) datos.setJSONArray("partidas", new JSONArray());
-    if (!datos.hasKey("puntajes")) datos.setJSONArray("puntajes", new JSONArray());
-    if (!datos.hasKey("creaciones")) datos.setJSONArray("creaciones", new JSONArray());
+  }
+
+  void cargarCache() throws Exception {
+    datos = new JSONObject();
+    JSONArray jugadores = new JSONArray(), partidas = new JSONArray();
+    JSONArray puntajes = new JSONArray(), creaciones = new JSONArray();
+    Statement st = conexion.createStatement();
+    ResultSet rs = st.executeQuery("SELECT nombre, ultima_actividad FROM jugadores ORDER BY nombre");
+    while(rs.next()) {
+      JSONObject o = new JSONObject(); o.setString("nombre",rs.getString("nombre"));
+      o.setString("ultimaActividad",rs.getString("ultima_actividad")); jugadores.append(o);
+    }
+    rs.close();
+    rs = st.executeQuery("SELECT snapshot FROM partidas ORDER BY actualizada DESC");
+    while(rs.next()) partidas.append(parseJSONObject(rs.getString("snapshot")));
+    rs.close();
+    rs = st.executeQuery("SELECT partida_id, jugador, puntaje, oleada, fecha FROM puntajes ORDER BY id");
+    while(rs.next()) {
+      JSONObject o = new JSONObject(); o.setString("partidaId",rs.getString("partida_id"));
+      o.setString("jugador",rs.getString("jugador")); o.setInt("puntaje",rs.getInt("puntaje"));
+      o.setInt("oleada",rs.getInt("oleada")); o.setString("fecha",rs.getString("fecha")); puntajes.append(o);
+    }
+    rs.close();
+    rs = st.executeQuery("SELECT definicion FROM creaciones ORDER BY rowid");
+    while(rs.next()) creaciones.append(parseJSONObject(rs.getString("definicion")));
+    rs.close(); st.close();
+    datos.setJSONArray("jugadores",jugadores); datos.setJSONArray("partidas",partidas);
+    datos.setJSONArray("puntajes",puntajes); datos.setJSONArray("creaciones",creaciones);
+  }
+
+  JSONObject parseJSONObject(String contenido) {
+    return parseJSONObject(contenido);
   }
 
   void guardarArchivo() {
-    File carpeta = new File(sketchPath("data"));
-    if (!carpeta.exists()) carpeta.mkdirs();
-    saveJSONObject(datos, archivo);
+    if(conexion==null || datos==null) return;
+    try {
+      conexion.setAutoCommit(false);
+      Statement st=conexion.createStatement();
+      st.executeUpdate("DELETE FROM puntajes");
+      st.executeUpdate("DELETE FROM partidas");
+      st.executeUpdate("DELETE FROM jugadores");
+      st.executeUpdate("DELETE FROM creaciones");
+      st.close();
+
+      PreparedStatement ps=conexion.prepareStatement("INSERT INTO jugadores(nombre,ultima_actividad) VALUES(?,?)");
+      JSONArray arr=datos.getJSONArray("jugadores");
+      for(int i=0;i<arr.size();i++) { JSONObject o=arr.getJSONObject(i); ps.setString(1,o.getString("nombre")); ps.setString(2,o.getString("ultimaActividad")); ps.addBatch(); }
+      ps.executeBatch(); ps.close();
+
+      ps=conexion.prepareStatement("INSERT INTO partidas(id,jugador,estado,actualizada,oleada,puntaje,snapshot) VALUES(?,?,?,?,?,?,?)");
+      arr=datos.getJSONArray("partidas");
+      for(int i=0;i<arr.size();i++) { JSONObject o=arr.getJSONObject(i); ps.setString(1,o.getString("id")); ps.setString(2,o.getString("jugador")); ps.setString(3,o.getString("estado")); ps.setString(4,o.getString("actualizada")); ps.setInt(5,o.getInt("oleada")); ps.setInt(6,o.getInt("puntaje")); ps.setString(7,o.toString()); ps.addBatch(); }
+      ps.executeBatch(); ps.close();
+
+      ps=conexion.prepareStatement("INSERT INTO puntajes(partida_id,jugador,puntaje,oleada,fecha) VALUES(?,?,?,?,?)");
+      arr=datos.getJSONArray("puntajes");
+      for(int i=0;i<arr.size();i++) { JSONObject o=arr.getJSONObject(i); ps.setString(1,o.getString("partidaId")); ps.setString(2,o.getString("jugador")); ps.setInt(3,o.getInt("puntaje")); ps.setInt(4,o.getInt("oleada")); ps.setString(5,o.getString("fecha")); ps.addBatch(); }
+      ps.executeBatch(); ps.close();
+
+      ps=conexion.prepareStatement("INSERT INTO creaciones(id,tipo,nombre,definicion) VALUES(?,?,?,?)");
+      arr=datos.getJSONArray("creaciones");
+      for(int i=0;i<arr.size();i++) { JSONObject o=arr.getJSONObject(i); ps.setString(1,o.getString("id")); ps.setString(2,o.getString("tipo")); ps.setString(3,o.getString("nombre")); ps.setString(4,o.toString()); ps.addBatch(); }
+      ps.executeBatch(); ps.close();
+      conexion.commit();
+    } catch(Exception e) {
+      try { conexion.rollback(); } catch(Exception ignored) {}
+      throw new RuntimeException("Error guardando datos en SQLite: " + e.getMessage(), e);
+    } finally {
+      try { conexion.setAutoCommit(true); } catch(Exception ignored) {}
+    }
+  }
+
+  void guardarCreacion(JSONObject creacion) {
+    datos.getJSONArray("creaciones").append(creacion);
+    guardarArchivo();
+  }
+
+  void cerrar() {
+    try { if(conexion!=null && !conexion.isClosed()) conexion.close(); }
+    catch(Exception e) { println("Error cerrando SQLite: " + e.getMessage()); }
   }
 
   String fecha() {
@@ -393,7 +480,7 @@ void guardarCreacionActual() {
   }
   if(saved.size()==0) return;
   c.setJSONArray("trazos",saved);
-  baseDatos.datos.getJSONArray("creaciones").append(c);
+  baseDatos.guardarCreacion(c);
   if(tipoCreacion.equals("ARMA")) baseDatos.agregarArmasCreadas();
-  baseDatos.guardarArchivo(); estado=MENU;
+  estado=MENU;
 }
