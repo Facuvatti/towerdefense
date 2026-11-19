@@ -398,5 +398,6 @@ void keyReleased() { if (key != CODED) teclas.put(Character.toLowerCase(key), fa
 
 void exit() {
   if(baseDatos!=null && (estado==JUEGO || estado==PAUSA || estado==TIENDA)) baseDatos.guardarPartida(false);
+  if(baseDatos!=null) baseDatos.cerrar();
   super.exit();
 }
