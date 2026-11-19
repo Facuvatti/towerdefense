@@ -406,36 +406,82 @@ final float EDITOR_X=270, EDITOR_Y=145, EDITOR_W=410, EDITOR_H=340;
 ArrayList<ArrayList<PVector>> trazosEditor=new ArrayList<ArrayList<PVector>>();
 ArrayList<PVector> trazoActualEditor=null;
 String nombreCreacion="Mi creacion", tipoCreacion="ARMA";
-float[] atributosCreacion={25,11,90,140};
+float[] atributosCreacion={25,11,90,140,1,0.05,0,0.6};
 int atributoSeleccionado=0;
 
 void abrirEditor() {
   estado=EDITOR; trazosEditor.clear(); trazoActualEditor=null;
-  nombreCreacion=tipoCreacion.equals("ARMA")?"Mi arma":"Mi zombie"; atributoSeleccionado=0;
-  if(tipoCreacion.equals("ARMA")) atributosCreacion=new float[]{25,11,90,140};
-  else atributosCreacion=new float[]{70,1.2,10,800};
+  nombreCreacion=tipoCreacion.equals("ARMA")?"Mi arma":"Mi zombie";
+  atributoSeleccionado=0;
+  if(tipoCreacion.equals("ARMA"))
+    atributosCreacion=new float[]{25,11,90,140,1,0.05,0,0.6};
+  else
+    atributosCreacion=new float[]{70,1.2,12,10,800,10,10,0};
+}
+
+String[] etiquetasCreacion() {
+  return tipoCreacion.equals("ARMA")
+    ? new String[]{"Daño","Vel. proyectil","Alcance","Cadencia ms","Proyectiles","Dispersión","Perfora","Retroceso"}
+    : new String[]{"Vida","Velocidad","Radio / tamaño","Daño contacto","Cadencia ms","Puntos","Botín","(reservado)"};
+}
+
+float pasoAtributo(int i) {
+  if(tipoCreacion.equals("ARMA")) {
+    if(i==1) return 0.1;
+    if(i==3) return 10;
+    if(i==5) return 0.02;
+    if(i==7) return 0.1;
+  } else {
+    if(i==1) return 0.1;
+    if(i==2) return 1;
+    if(i==4) return 25;
+  }
+  return 1;
+}
+
+void modificarAtributo(int i,int direccion) {
+  if(i<0 || i>=atributosCreacion.length) return;
+  float v=atributosCreacion[i]+pasoAtributo(i)*direccion;
+  if(tipoCreacion.equals("ARMA")) {
+    float[] minimos={1,1,1,50,1,0,0,0};
+    float[] maximos={500,40,600,3000,12,1.5,10,10};
+    atributosCreacion[i]=constrain(v,minimos[i],maximos[i]);
+  } else {
+    float[] minimos={1,0.2,4,1,100,0,0,0};
+    float[] maximos={5000,6,40,500,5000,10000,10000,0};
+    atributosCreacion[i]=constrain(v,minimos[i],maximos[i]);
+  }
 }
 
 void dibujarEditor() {
   background(17,22,24); rectMode(CORNER);
   fill(230); textAlign(CENTER,CENTER); textSize(28); text("TALLER DE CREACIONES",width/2,42);
-  textSize(15); fill(190); text("Tipo: "+tipoCreacion+" | TAB: cambiar tipo",width/2,80);
+  textSize(15); fill(190);
+  text("Tipo: "+tipoCreacion+"   |   TAB: cambiar tipo",width/2,80);
+  noStroke(); fill(35,44,43); rect(25,112,225,390,8);
+  fill(230); textAlign(LEFT,CENTER); textSize(16); text("Nombre",45,137);
+  fill(255,220,130); text(nombreCreacion+"_",45,160);
+  textSize(13); fill(185); text("ATRIBUTOS",45,190);
+  String[] labels=etiquetasCreacion();
+  for(int i=0;i<labels.length;i++) {
+    float y=220+i*31;
+    boolean sel=i==atributoSeleccionado;
+    noStroke(); fill(sel?color(76,83,54):color(43,51,48)); rect(38,y-12,199,26,4);
+    fill(sel?color(255,225,120):color(205)); textAlign(LEFT,CENTER); textSize(12);
+    text((i+1)+". "+labels[i],45,y);
+    textAlign(RIGHT,CENTER); fill(255); text(nf(atributosCreacion[i],0,2),205,y);
+  }
+  fill(165); textAlign(LEFT,CENTER); textSize(11);
+  text("↑/↓ o clic en valor para ajustar",38,480);
   fill(35,44,43); stroke(100,125,100); rect(EDITOR_X,EDITOR_Y,EDITOR_W,EDITOR_H);
   stroke(55,72,62); strokeWeight(1);
   for(int x=0;x<=EDITOR_W;x+=20) line(EDITOR_X+x,EDITOR_Y,EDITOR_X+x,EDITOR_Y+EDITOR_H);
-  for(int y=0;y<=EDITOR_H;y+=20) line(EDITOR_X,EDITOR_Y+y,EDITOR_X+EDITOR_W,EDITOR_Y+y);
+  for(int y=0;y<=EDITOR_H;y+=20) line(EDITOR_X,EDITOR_Y+y,EDITOR_X+EDITOR_W,y+EDITOR_Y);
   dibujarTrazosEditor();
-  noStroke(); fill(230); textAlign(LEFT,CENTER); textSize(16); text("Nombre: "+nombreCreacion+"_",45,145);
-  text("Atributos (1-4 para elegir, flechas para cambiar):",45,205);
-  String[] labels=tipoCreacion.equals("ARMA")
-    ? new String[]{"Daño: ","Velocidad proyectil: ","Alcance (frames): ","Cadencia ms: "}
-    : new String[]{"Vida: ","Velocidad: ","Daño contacto: ","Cadencia ataque ms: "};
-  for(int i=0;i<4;i++) {
-    fill(i==atributoSeleccionado?color(255,220,90):color(190));
-    text((i+1)+". "+labels[i]+nf(atributosCreacion[i],0,1),45,240+i*32);
-  }
-  fill(175); textSize(13); text("Dibujá dentro del recuadro con el mouse.",45,440);
-  text("DELETE: borrar dibujo | ENTER: guardar | ESC: volver",45,466); textAlign(CENTER,CENTER);
+  noStroke(); fill(175); textAlign(CENTER,CENTER); textSize(13);
+  text("Dibujá la forma dentro del recuadro",EDITOR_X+EDITOR_W/2,510);
+  text("DELETE: borrar dibujo   ENTER: guardar   ESC: volver",width/2,548);
+  text("TAB: cambiar entre arma y zombie   |   1-8: elegir atributo",width/2,574);
 }
 
 void dibujarTrazosEditor() {
@@ -462,11 +508,25 @@ void guardarCreacionActual() {
   JSONObject c=new JSONObject();
   c.setString("id",Long.toString(System.currentTimeMillis())+"-"+str((int)random(1000,9999)));
   c.setString("tipo",tipoCreacion); c.setString("nombre",nombreCreacion.trim());
-  c.setInt("vida",tipoCreacion.equals("ZOMBIE")?round(atributosCreacion[0]):1);
-  c.setFloat("velocidad",atributosCreacion[1]);
-  c.setInt("dano",tipoCreacion.equals("ARMA")?round(atributosCreacion[0]):round(atributosCreacion[2]));
-  c.setInt("alcance",tipoCreacion.equals("ARMA")?round(atributosCreacion[2]):0);
-  c.setInt("cadencia",round(atributosCreacion[3]));
+  if(tipoCreacion.equals("ARMA")) {
+    c.setInt("vida",1);
+    c.setInt("dano",round(atributosCreacion[0]));
+    c.setFloat("velocidad",atributosCreacion[1]);
+    c.setInt("alcance",round(atributosCreacion[2]));
+    c.setInt("cadencia",round(atributosCreacion[3]));
+    c.setInt("perdigones",round(atributosCreacion[4]));
+    c.setFloat("dispersion",atributosCreacion[5]);
+    c.setInt("perfora",round(atributosCreacion[6]));
+    c.setFloat("retroceso",atributosCreacion[7]);
+  } else {
+    c.setInt("vida",round(atributosCreacion[0]));
+    c.setFloat("velocidad",atributosCreacion[1]);
+    c.setFloat("radio",atributosCreacion[2]);
+    c.setInt("dano",round(atributosCreacion[3]));
+    c.setInt("cadencia",round(atributosCreacion[4]));
+    c.setInt("puntos",round(atributosCreacion[5]));
+    c.setInt("botin",round(atributosCreacion[6]));
+  }
   c.setInt("tinte",tipoCreacion.equals("ARMA")?color(255,205,95):color(130,205,115));
   JSONArray saved=new JSONArray();
   for(ArrayList<PVector> trazo:trazosEditor) {
