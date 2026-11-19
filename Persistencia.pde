@@ -406,7 +406,7 @@ final float EDITOR_X=270, EDITOR_Y=145, EDITOR_W=410, EDITOR_H=340;
 ArrayList<ArrayList<PVector>> trazosEditor=new ArrayList<ArrayList<PVector>>();
 ArrayList<PVector> trazoActualEditor=null;
 String nombreCreacion="Mi creacion", tipoCreacion="ARMA";
-float[] atributosCreacion={25,11,90,140,1,0.05,0,0.6};
+float[] atributosCreacion={25,11,90,140,1,0.05,0,0.6,16};
 int atributoSeleccionado=0;
 
 void abrirEditor() {
@@ -466,15 +466,15 @@ void dibujarEditor() {
   textSize(13); fill(185); text("ATRIBUTOS",45,190);
   String[] labels=etiquetasCreacion();
   for(int i=0;i<labels.length;i++) {
-    float y=220+i*31;
+    float y=218+i*27;
     boolean sel=i==atributoSeleccionado;
-    noStroke(); fill(sel?color(76,83,54):color(43,51,48)); rect(38,y-12,199,26,4);
+    noStroke(); fill(sel?color(76,83,54):color(43,51,48)); rect(38,y-11,199,24,4);
     fill(sel?color(255,225,120):color(205)); textAlign(LEFT,CENTER); textSize(12);
     text((i+1)+". "+labels[i],45,y);
     textAlign(RIGHT,CENTER); fill(255); text(nf(atributosCreacion[i],0,2),205,y);
   }
   fill(165); textAlign(LEFT,CENTER); textSize(11);
-  text("↑/↓ o clic en valor para ajustar",38,480);
+  text("↑/↓ | clic izq.: + | clic der.: -",38,476);
   fill(35,44,43); stroke(100,125,100); rect(EDITOR_X,EDITOR_Y,EDITOR_W,EDITOR_H);
   stroke(55,72,62); strokeWeight(1);
   for(int x=0;x<=EDITOR_W;x+=20) line(EDITOR_X+x,EDITOR_Y,EDITOR_X+x,EDITOR_Y+EDITOR_H);
