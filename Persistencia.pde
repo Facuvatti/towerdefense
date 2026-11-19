@@ -414,15 +414,15 @@ void abrirEditor() {
   nombreCreacion=tipoCreacion.equals("ARMA")?"Mi arma":"Mi zombie";
   atributoSeleccionado=0;
   if(tipoCreacion.equals("ARMA"))
-    atributosCreacion=new float[]{25,11,90,140,1,0.05,0,0.6};
+    atributosCreacion=new float[]{25,11,90,140,1,0.05,0,0.6,16};
   else
-    atributosCreacion=new float[]{70,1.2,12,10,800,10,10};
+    atributosCreacion=new float[]{70,1.2,12,10,800,10,10,0.24};
 }
 
 String[] etiquetasCreacion() {
   return tipoCreacion.equals("ARMA")
-    ? new String[]{"Daño","Vel. proyectil","Alcance","Cadencia ms","Proyectiles","Dispersión","Perfora","Retroceso"}
-    : new String[]{"Vida","Velocidad","Radio / tamaño","Daño contacto","Cadencia ms","Puntos","Botín"};
+    ? new String[]{"Daño","Vel. proyectil","Alcance","Cadencia ms","Proyectiles","Dispersión","Perfora","Retroceso","Largo arma"}
+    : new String[]{"Vida","Velocidad","Radio / tamaño","Daño contacto","Cadencia ms","Puntos","Botín","Aceleración"};
 }
 
 float pasoAtributo(int i) {
@@ -431,10 +431,12 @@ float pasoAtributo(int i) {
     if(i==3) return 10;
     if(i==5) return 0.02;
     if(i==7) return 0.1;
+    if(i==8) return 1;
   } else {
     if(i==1) return 0.1;
     if(i==2) return 1;
     if(i==4) return 25;
+    if(i==7) return 0.02;
   }
   return 1;
 }
@@ -443,12 +445,12 @@ void modificarAtributo(int i,int direccion) {
   if(i<0 || i>=atributosCreacion.length) return;
   float v=atributosCreacion[i]+pasoAtributo(i)*direccion;
   if(tipoCreacion.equals("ARMA")) {
-    float[] minimos={1,1,1,50,1,0,0,0};
-    float[] maximos={500,40,600,3000,12,1.5,10,10};
+    float[] minimos={1,1,1,50,1,0,0,0,8};
+    float[] maximos={500,40,600,3000,12,1.5,10,10,50};
     atributosCreacion[i]=constrain(v,minimos[i],maximos[i]);
   } else {
-    float[] minimos={1,0.2,4,1,100,0,0};
-    float[] maximos={5000,6,40,500,5000,10000,10000};
+    float[] minimos={1,0.2,4,1,100,0,0,0.02};
+    float[] maximos={5000,6,40,500,5000,10000,10000,3};
     atributosCreacion[i]=constrain(v,minimos[i],maximos[i]);
   }
 }
@@ -518,6 +520,7 @@ void guardarCreacionActual() {
     c.setFloat("dispersion",atributosCreacion[5]);
     c.setInt("perfora",round(atributosCreacion[6]));
     c.setFloat("retroceso",atributosCreacion[7]);
+    c.setFloat("largo",atributosCreacion[8]);
   } else {
     c.setInt("vida",round(atributosCreacion[0]));
     c.setFloat("velocidad",atributosCreacion[1]);
@@ -526,6 +529,7 @@ void guardarCreacionActual() {
     c.setInt("cadencia",round(atributosCreacion[4]));
     c.setInt("puntos",round(atributosCreacion[5]));
     c.setInt("botin",round(atributosCreacion[6]));
+    c.setFloat("aceleracion",atributosCreacion[7]);
   }
   c.setInt("tinte",tipoCreacion.equals("ARMA")?color(255,205,95):color(130,205,115));
   JSONArray saved=new JSONArray();
