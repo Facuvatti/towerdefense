@@ -48,7 +48,7 @@ class BaseDatos {
     }
     rs.close();
     rs = st.executeQuery("SELECT snapshot FROM partidas ORDER BY actualizada DESC");
-    while(rs.next()) partidas.append(parseJSONObject(rs.getString("snapshot")));
+    while(rs.next()) partidas.append(parseJSON(rs.getString("snapshot")));
     rs.close();
     rs = st.executeQuery("SELECT partida_id, jugador, puntaje, oleada, fecha FROM puntajes ORDER BY id");
     while(rs.next()) {
@@ -58,13 +58,13 @@ class BaseDatos {
     }
     rs.close();
     rs = st.executeQuery("SELECT definicion FROM creaciones ORDER BY rowid");
-    while(rs.next()) creaciones.append(parseJSONObject(rs.getString("definicion")));
+    while(rs.next()) creaciones.append(parseJSON(rs.getString("definicion")));
     rs.close(); st.close();
     datos.setJSONArray("jugadores",jugadores); datos.setJSONArray("partidas",partidas);
     datos.setJSONArray("puntajes",puntajes); datos.setJSONArray("creaciones",creaciones);
   }
 
-  JSONObject parseJSONObject(String contenido) {
+  JSONObject parseJSON(String contenido) {
     return parseJSONObject(contenido);
   }
 
