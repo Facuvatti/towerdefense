@@ -416,13 +416,13 @@ void abrirEditor() {
   if(tipoCreacion.equals("ARMA"))
     atributosCreacion=new float[]{25,11,90,140,1,0.05,0,0.6};
   else
-    atributosCreacion=new float[]{70,1.2,12,10,800,10,10,0};
+    atributosCreacion=new float[]{70,1.2,12,10,800,10,10};
 }
 
 String[] etiquetasCreacion() {
   return tipoCreacion.equals("ARMA")
     ? new String[]{"Daño","Vel. proyectil","Alcance","Cadencia ms","Proyectiles","Dispersión","Perfora","Retroceso"}
-    : new String[]{"Vida","Velocidad","Radio / tamaño","Daño contacto","Cadencia ms","Puntos","Botín","(reservado)"};
+    : new String[]{"Vida","Velocidad","Radio / tamaño","Daño contacto","Cadencia ms","Puntos","Botín"};
 }
 
 float pasoAtributo(int i) {
@@ -447,8 +447,8 @@ void modificarAtributo(int i,int direccion) {
     float[] maximos={500,40,600,3000,12,1.5,10,10};
     atributosCreacion[i]=constrain(v,minimos[i],maximos[i]);
   } else {
-    float[] minimos={1,0.2,4,1,100,0,0,0};
-    float[] maximos={5000,6,40,500,5000,10000,10000,0};
+    float[] minimos={1,0.2,4,1,100,0,0};
+    float[] maximos={5000,6,40,500,5000,10000,10000};
     atributosCreacion[i]=constrain(v,minimos[i],maximos[i]);
   }
 }
