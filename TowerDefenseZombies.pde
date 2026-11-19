@@ -313,7 +313,7 @@ void mousePressed() {
   if(estado==EDITOR) {
     if(mouseX>=EDITOR_X && mouseX<=EDITOR_X+EDITOR_W && mouseY>=EDITOR_Y && mouseY<=EDITOR_Y+EDITOR_H) {
       trazoActualEditor=new ArrayList<PVector>(); trazoActualEditor.add(new PVector(mouseX,mouseY)); trazosEditor.add(trazoActualEditor);
-    } else if(mouseX>=38 && mouseX<=237 && mouseY>=208 && mouseY<=456) {
+    } else if(mouseX>=38 && mouseX<=237 && mouseY>=208 && mouseY<=208+31*atributosCreacion.length) {
       int idx=constrain(floor((mouseY-208)/31),0,atributosCreacion.length-1);
       atributoSeleccionado=idx;
       if(mouseX>=185) modificarAtributo(idx,mouseButton==RIGHT?-1:1);
