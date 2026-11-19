@@ -28,11 +28,12 @@ class Zombie extends Entidad {
   }
 
   Zombie(float x, float y, JSONObject def) {
-    super(x, y, 12, def.getInt("vida", 55), def.getInt("dano", 9), def.getInt("cadencia", 800));
+    super(x, y, def.getFloat("radio", 12), def.getInt("vida", 55), def.getInt("dano", 9), def.getInt("cadencia", 800));
     definicion = def; creacionId = def.getString("id", ""); tipo = 0;
     vida = vidaMax = def.getInt("vida", 55);
     velMax = def.getFloat("velocidad", 1.0); acel = velMax * 0.2;
-    puntos = max(10, vidaMax/2); botin = max(10, vidaMax/3);
+    puntos = def.getInt("puntos", max(10, vidaMax/2));
+    botin = def.getInt("botin", max(10, vidaMax/3));
     cuerpo = def.getInt("tinte", color(130,205,115));
   }
 
