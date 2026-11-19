@@ -185,14 +185,19 @@ class BaseDatos {
     return catalogo.get(0);
   }
 
-  void agregarArmasCreadas() {
-    if(jugador==null) return;
-    for(JSONObject c:creaciones("ARMA")) {
-      String id=c.getString("id","");
-      boolean existe=false;
-      for(Arma a:jugador.armas) if(a.creacionId.equals(id)) { existe=true; break; }
-      if(!existe) jugador.armas.add(new Arma(c));
-    }
+  // Las armas creadas se incorporan al catalogo de la tienda, nunca al inventario gratis.
+  void cargarArmasCreadasEnCatalogo() {
+    for(JSONObject c:creaciones("ARMA")) agregarArmaAlCatalogo(c);
+  }
+
+  void agregarArmaAlCatalogo(JSONObject def) {
+    String id=def.getString("id","");
+    if(id.length()==0) return;
+    for(Arma a:catalogo) if(a.creacionId.equals(id)) return;
+    Arma nueva=new Arma(def);
+    nueva.precio=def.getInt("precio",250);
+    catalogo.add(nueva);
+    if(tienda!=null) tienda.agregarArma(nueva);
   }
 
   void crearNuevaPartida() {
@@ -512,6 +517,7 @@ void guardarCreacionActual() {
   c.setString("tipo",tipoCreacion); c.setString("nombre",nombreCreacion.trim());
   if(tipoCreacion.equals("ARMA")) {
     c.setInt("vida",1);
+    c.setInt("precio",250);
     c.setInt("dano",round(atributosCreacion[0]));
     c.setFloat("velocidad",atributosCreacion[1]);
     c.setInt("alcance",round(atributosCreacion[2]));
