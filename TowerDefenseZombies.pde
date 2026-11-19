@@ -32,6 +32,7 @@ void setup() {
   textFont(createFont("Monospaced.bold", 16));
   crearFondo();
   crearCatalogo();
+  baseDatos.cargarArmasCreadasEnCatalogo();
   torre = new TorreCentral(width/2, CENTRO_Y);
   jugador = new Jugador(width/2, CENTRO_Y + 70);
   tienda = new Tienda();
@@ -44,7 +45,6 @@ void nuevaPartida() {
   crearFondo();
   torre = new TorreCentral(width/2, CENTRO_Y);
   jugador.reiniciar(width/2, CENTRO_Y + 70);
-  baseDatos.agregarArmasCreadas();
   oleada = 0; puntaje = 0; monedas = 150; materiales = 0; cuentaAtras = 200; bannerT = 0; avisoT = 0;
   estado = JUEGO;
   baseDatos.crearNuevaPartida();
