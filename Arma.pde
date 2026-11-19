@@ -16,8 +16,9 @@ class Arma {
 
   Arma(JSONObject def) {
     this(def.getString("nombre", "Arma creada"), 0, def.getInt("dano", 25),
-      def.getInt("cadencia", 140), 1, 0.05, def.getFloat("velocidad", 11),
-      def.getInt("alcance", 90), 0, 0.6, 16, def.getInt("tinte", color(255,205,95)));
+      def.getInt("cadencia", 140), def.getInt("perdigones", 1), def.getFloat("dispersion", 0.05),
+      def.getFloat("velocidad", 11), def.getInt("alcance", 90), def.getInt("perfora", 0),
+      def.getFloat("retroceso", 0.6), 16, def.getInt("tinte", color(255,205,95)));
     creacionId = def.getString("id", "");
     trazos = def.getJSONArray("trazos");
   }
