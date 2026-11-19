@@ -551,6 +551,6 @@ void guardarCreacionActual() {
   if(saved.size()==0) return;
   c.setJSONArray("trazos",saved);
   baseDatos.guardarCreacion(c);
-  if(tipoCreacion.equals("ARMA")) baseDatos.agregarArmasCreadas();
+  if(tipoCreacion.equals("ARMA")) baseDatos.agregarArmaAlCatalogo(c);
   estado=MENU;
 }
