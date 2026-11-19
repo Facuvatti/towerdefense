@@ -483,7 +483,7 @@ void dibujarEditor() {
   noStroke(); fill(175); textAlign(CENTER,CENTER); textSize(13);
   text("Dibujá la forma dentro del recuadro",EDITOR_X+EDITOR_W/2,510);
   text("DELETE: borrar dibujo   ENTER: guardar   ESC: volver",width/2,548);
-  text("TAB: cambiar entre arma y zombie   |   1-8: elegir atributo",width/2,574);
+  text("TAB: cambiar entre arma y zombie   |   1-9: elegir atributo",width/2,574);
 }
 
 void dibujarTrazosEditor() {
