@@ -84,6 +84,15 @@ class Tienda {
     items.add(new ItemTienda(T_MEJORAR, null));
   }
 
+  void agregarArma(Arma arma) {
+    for(ItemTienda item:items)
+      if(item.tipo==T_ARMA && item.arma==arma) return;
+    int indicePistola=items.size();
+    for(int i=0;i<items.size();i++)
+      if(items.get(i).tipo==T_ARMA && items.get(i).arma==catalogo.get(0)) { indicePistola=i; break; }
+    items.add(indicePistola,new ItemTienda(T_ARMA,arma));
+  }
+
   float filaY(int i) { return py + 70 + i * alto; }
 
   int filaBajoMouse() {
