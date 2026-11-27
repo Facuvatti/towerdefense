@@ -36,7 +36,7 @@ void draw() {
   if (estado == JUEGO) actualizarJuego();
   dibujarJuego();
   if (estado == PAUSA) overlay("PAUSA", "P para continuar");
-  if (estado == FIN) overlay("GAME OVER", "Oleada " + oleada + "   Puntaje " + puntaje + "\\nENTER para reiniciar");
+  if (estado == FIN) overlay("GAME OVER", "Oleada " + oleada + "   Puntaje " + puntaje + "\nENTER para reiniciar");
 }
 
 void actualizarJuego() {
