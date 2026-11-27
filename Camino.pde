@@ -2,7 +2,7 @@
 // Cada celda guarda cuantos pasos faltan hasta el objetivo mas cercano (jugador, torre o torretas).
 // Los zombies bajan por ese campo; asi salen de huecos y formas en U sin quedar trabados.
 final int CELDA = 8;
-final float MARGEN_CAMINO = 6;   // celdas pegadas a una barrera tambien se bloquean
+final float MARGEN_CAMINO = 15;  // margen para que tambien pasen los zombies grandes
 int cols, filas;
 int[] distCampo, cola;
 boolean[] bloqueada;
