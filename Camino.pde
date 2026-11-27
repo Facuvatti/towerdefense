@@ -11,10 +11,9 @@ boolean[] bloqueada;                 // indica si una celda está ocupada por un
 boolean campoSucio = true;           // indica que hay que volver a calcular las celdas bloqueadas
 int campoT = 0;                      // espera entre actualizaciones del camino
 
-// Direcciones permitidas: arriba, derecha, abajo e izquierda.
-// Usamos solo cuatro direcciones para evitar que el campo genere recorridos diagonales.
-final int[] DIR_X = {0, 1, 0, -1};
-final int[] DIR_Y = {-1, 0, 1, 0};
+// Ocho direcciones posibles: incluye diagonales para que los zombies puedan moverse libremente.
+final int[] DIR_X = {0, 1, 1, 1, 0, -1, -1, -1};
+final int[] DIR_Y = {-1, -1, 0, 1, 1, 1, 0, -1};
 
 // Prepara los arreglos según el tamaño de la ventana.
 void iniciarCampo() {
@@ -124,7 +123,7 @@ void actualizarCampo() {
     int x = actual % cols;                            // obtiene su columna
     int y = actual / cols;                            // obtiene su fila
 
-    for (int d = 0; d < 4; d++) {                     // prueba arriba, derecha, abajo e izquierda
+    for (int d = 0; d < 8; d++) {                     // prueba las ocho direcciones, incluidas las diagonales
       int nx = x + DIR_X[d];                          // columna de la celda vecina
       int ny = y + DIR_Y[d];                          // fila de la celda vecina
 
@@ -133,6 +132,13 @@ void actualizarCampo() {
       int vecino = ny * cols + nx;                    // convierte la posición vecina en índice
       if (bloqueada[vecino]) continue;                // no atraviesa barreras
       if (distCampo[vecino] != -1) continue;          // no procesa dos veces la misma celda
+
+      // Evita cruzar en diagonal entre dos celdas bloqueadas (cortar una esquina).
+      if (DIR_X[d] != 0 && DIR_Y[d] != 0) {
+        int lateralX = y * cols + nx;                 // celda horizontal contigua
+        int lateralY = ny * cols + x;                 // celda vertical contigua
+        if (bloqueada[lateralX] || bloqueada[lateralY]) continue;
+      }
 
       distCampo[vecino] = distCampo[actual] + 1;      // la vecina está un paso más lejos del objetivo
       cola[fin[0]++] = vecino;                        // agrega la vecina para procesarla después
@@ -155,7 +161,7 @@ PVector direccionCampo(PVector posicion) {
   int mejorDireccion = -1;                            // todavía no encontró una salida
   int menorDistancia = distanciaActual >= 0 ? distanciaActual : Integer.MAX_VALUE;
 
-  for (int d = 0; d < 4; d++) {                       // revisa las cuatro celdas vecinas
+  for (int d = 0; d < 8; d++) {                       // revisa las ocho celdas vecinas
     int nx = x + DIR_X[d];                            // columna vecina
     int ny = y + DIR_Y[d];                             // fila vecina
 
@@ -172,6 +178,6 @@ PVector direccionCampo(PVector posicion) {
 
   if (mejorDireccion == -1) return null;               // no encontró una celda que acerque al objetivo
 
-  // Devuelve una dirección horizontal o vertical, nunca diagonal.
-  return new PVector(DIR_X[mejorDireccion], DIR_Y[mejorDireccion]);
+  // Normaliza el movimiento para que en diagonal no avance más rápido.
+  return new PVector(DIR_X[mejorDireccion], DIR_Y[mejorDireccion]).normalize();
 }
