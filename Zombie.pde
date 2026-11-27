@@ -48,7 +48,10 @@ class Zombie extends Entidad {
   void actualizar() {
     Entidad obj = objetivo();
     PVector d = PVector.sub(obj.pos, pos);
-    if (d.magSq() > 0.001) acc.add(d.normalize().mult(acel));
+    if (d.magSq() > 0.001) {
+      angulo = d.heading();
+      acc.add(d.normalize().mult(acel));
+    }
 
     // Separacion gradual: evita que los grupos se amontonen o se empujen bruscamente.
     for (Zombie o : zombies) {
