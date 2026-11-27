@@ -21,11 +21,16 @@ abstract class Entidad {
 
   boolean colision(Entidad o) { return PVector.dist(pos, o.pos) < radio + o.radio; }
 
-  // Resolucion: empuja a esta entidad fuera de la otra
+  // Resolucion segura incluso cuando ambas entidades ocupan exactamente el mismo punto.
   void separarDe(Entidad o) {
     PVector e = PVector.sub(pos, o.pos);
-    float solape = radio + o.radio - e.mag();
-    if (solape > 0) { e.setMag(solape); pos.add(e); }
+    float distancia = e.mag();
+    float solape = radio + o.radio - distancia;
+    if (solape > 0) {
+      if (distancia < 0.001) e.set(cos(angulo + PI), sin(angulo + PI));
+      e.setMag(solape + 0.5);
+      pos.add(e);
+    }
   }
 
   void herir(int d) { vida -= d; flash = 6; }
