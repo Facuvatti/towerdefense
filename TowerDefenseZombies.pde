@@ -36,7 +36,7 @@ void draw() {
   if (estado == JUEGO) actualizarJuego();
   dibujarJuego();
   if (estado == PAUSA) overlay("PAUSA", "P para continuar");
-  if (estado == FIN) overlay("GAME OVER", "Oleada " + oleada + "   Puntaje " + puntaje + "\nENTER para reiniciar");
+  if (estado == FIN) overlay("GAME OVER", "Oleada " + oleada + "   Puntaje " + puntaje + "\\nENTER para reiniciar");
 }
 
 void actualizarJuego() {
@@ -83,6 +83,7 @@ void dibujarJuego() {
   pushMatrix();
   translate(random(-shake, shake), random(-shake, shake)); shake *= 0.85;
   image(fondo, 0, 0);
+  for (Zombie z : zombies) z.mostrarCamino();
   for (Torre t : torres) t.mostrar();
   for (Zombie z : zombies) z.mostrar();
   for (Bala b : balas) b.mostrar();
@@ -108,6 +109,7 @@ void dibujarHUD() {
   texto("OLEADA " + oleada, 340, 23, 18, color(255, 220, 80), LEFT);
   texto("$ " + monedas, 520, 23, 18, color(110, 240, 130), LEFT);
   texto("PUNTOS " + puntaje, width - 16, 23, 18, color(255), RIGHT);
+  texto("RUTA PUNTEADA: AMARILLO = JUGADOR  |  CELESTE = TORRE", 16, 62, 11, color(230, 230, 230, 210), LEFT);
   texto("WASD mover  |  Click izq. disparar  |  Click der. torre ($" + COSTO_TORRE + ")  |  P pausa",
         width/2, height - 16, 12, color(210, 210, 210, 200), CENTER);
   if (bannerT > 0) texto("OLEADA " + oleada, width/2, height*0.3, 56, color(255, 220, 80, min(255, bannerT*4)), CENTER);
